@@ -25,27 +25,7 @@ const features = [
         gradient: "from-cyan-400/20 to-blue-500/20",
         border: "group-hover:border-cyan-400/50"
     },
-    {
-        icon: <Rocket className="w-6 h-6 text-red-400" />,
-        title: "Future-Proof Growth",
-        desc: "Scalable AI solutions that grow with your business and keep you ahead of the curve.",
-        gradient: "from-red-400/20 to-rose-500/20",
-        border: "group-hover:border-red-400/50"
-    },
-    {
-        icon: <Shield className="w-6 h-6 text-emerald-400" />,
-        title: "Secure & Reliable",
-        desc: "Enterprise-grade security ensuring your data is protected while maximizing output.",
-        gradient: "from-emerald-400/20 to-teal-500/20",
-        border: "group-hover:border-emerald-400/50"
-    },
-    {
-        icon: <Cpu className="w-6 h-6 text-blue-400" />,
-        title: "Deep Tech Integration",
-        desc: "Seamlessly embedding AI into your existing infrastructure for immediate impact.",
-        gradient: "from-blue-400/20 to-indigo-500/20",
-        border: "group-hover:border-blue-400/50"
-    }
+
 ];
 
 export function WhyAI() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BookOpen, Clock, Users, ArrowRight, Star, Youtube, Code, Terminal } from "lucide-react";
+import { BookOpen, Clock, ArrowRight, Star, Youtube, Code, Terminal } from "lucide-react";
 import Link from "next/link";
 
 const courses = [
@@ -10,7 +10,6 @@ const courses = [
         description: "Master the basics of Artificial Intelligence, from neural networks to ethical considerations. No coding experience required.",
         level: "Beginner",
         duration: "4 Weeks",
-        students: "1.2k+",
         rating: 4.8,
         category: "Foundation",
         imageGradient: "from-blue-500 to-cyan-400",
@@ -21,7 +20,6 @@ const courses = [
         description: "Dive deep into the mathematics and architecture of modern neural networks. Build your own models from scratch.",
         level: "Advanced",
         duration: "12 Weeks",
-        students: "850+",
         rating: 4.9,
         category: "Engineering",
         imageGradient: "from-purple-500 to-pink-500",
@@ -32,7 +30,6 @@ const courses = [
         description: "Learn to fine-tune Large Language Models and build custom RAG pipelines for enterprise applications.",
         level: "Intermediate",
         duration: "8 Weeks",
-        students: "2k+",
         rating: 4.9,
         category: "Applied AI",
         imageGradient: "from-emerald-500 to-teal-400",
@@ -43,7 +40,6 @@ const courses = [
         description: "For executives and managers: how to implement AI strategies that drive business value and ROI.",
         level: "Beginner",
         duration: "3 Weeks",
-        students: "500+",
         rating: 4.7,
         category: "Business",
         imageGradient: "from-amber-500 to-orange-400",
@@ -73,21 +69,7 @@ export default function CoursesPage() {
                         </p>
                     </motion.div>
 
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        className="hidden md:block"
-                    >
-                        <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-slate-200 shadow-sm">
-                            <div className="flex -space-x-2">
-                                {[1, 2, 3].map(i => (
-                                    <div key={i} className="w-8 h-8 rounded-full bg-slate-200 border-2 border-white" />
-                                ))}
-                            </div>
-                            <span className="text-sm font-medium text-slate-600 pl-2">Join 4,000+ Students</span>
-                        </div>
-                    </motion.div>
+
                 </div>
 
                 {/* Course Grid */}
@@ -126,10 +108,7 @@ export default function CoursesPage() {
                                         <Clock className="w-4 h-4" />
                                         {course.duration}
                                     </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <Users className="w-4 h-4" />
-                                        {course.students}
-                                    </div>
+
                                     <div className="flex items-center gap-1.5 ml-auto text-amber-500">
                                         <Star className="w-4 h-4 fill-current" />
                                         {course.rating}

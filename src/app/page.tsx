@@ -2,9 +2,10 @@
 
 import { HeroModel } from "@/components/canvas/HeroModel";
 import { ArrowRight } from "lucide-react";
-import { WhyAI } from "@/components/home/WhyAI";
-import { Expertise } from "@/components/home/Expertise";
 import { SelectedWorks } from "@/components/home/SelectedWorks";
+import { Ecosystem } from "@/components/home/Ecosystem";
+import { Introduction } from "@/components/home/Introduction";
+import { VideoSection } from "@/components/home/VideoSection";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -51,17 +52,28 @@ export default function Home() {
                 whileTap={{ scale: 0.98 }}
                 className="px-8 py-4 bg-white text-slate-700 rounded-full font-semibold border border-slate-200 hover:border-primary/50 hover:text-primary transition-colors"
               >
-                About Institute
+                About Us
               </motion.button>
             </Link>
           </div>
         </motion.div>
       </section>
 
-      {/* Why AI Matters Section */}
+      {/* Introduction Section */}
+      <Introduction />
 
-      <WhyAI />
-      <Expertise />
+      {/* Team Video Section */}
+      <VideoSection
+      // Add your video URL here:
+      // videoUrl="https://www.youtube.com/watch?v=YOUR_VIDEO_ID"
+      // or local: videoUrl="/videos/team-intro.mp4"
+      // posterImage="/images/video-thumbnail.jpg"
+      />
+
+      {/* Ecosystem Section */}
+      <Ecosystem />
+
+      {/* Selected Works */}
       <SelectedWorks />
     </main>
   );

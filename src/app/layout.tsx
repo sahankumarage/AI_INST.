@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI-Institute | Future of Intelligence",
+  title: "AI_INST. | Future of Intelligence",
   description: "Professional AI services: Web Dev, Video Gen, Consulting. Empowering your future with AI.",
 };
 

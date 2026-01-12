@@ -6,16 +6,15 @@ import { Github, Twitter, Linkedin, Mail, ArrowRight } from "lucide-react";
 
 const footerLinks = {
     company: [
-        { name: "About Institute", href: "/about" },
-        { name: "Careers", href: "/careers" },
-        { name: "Research", href: "/research" },
-        { name: "Press Kit", href: "/press" },
+        { name: "About Us", href: "/about" },
+        { name: "Case Studies", href: "/work" },
+        { name: "Contact", href: "/contact" },
     ],
     services: [
-        { name: "Neural Architecture", href: "/services/neural-architecture" },
-        { name: "Generative Agents", href: "/services/autonomous-agents" },
-        { name: "Edge Intelligence", href: "/services/edge-intelligence" },
-        { name: "Consulting", href: "/services/consulting" },
+        { name: "Products", href: "/products" },
+        { name: "AI Agents", href: "/agents" },
+        { name: "Consulting", href: "/consulting" },
+        { name: "Education", href: "/courses" },
     ],
     legal: [
         { name: "Privacy Policy", href: "/privacy" },
@@ -28,7 +27,7 @@ const socialLinks = [
     { icon: <Twitter className="w-5 h-5" />, href: "#", label: "Twitter" },
     { icon: <Linkedin className="w-5 h-5" />, href: "#", label: "LinkedIn" },
     { icon: <Github className="w-5 h-5" />, href: "#", label: "GitHub" },
-    { icon: <Mail className="w-5 h-5" />, href: "mailto:hello@ai-institute.com", label: "Email" },
+    { icon: <Mail className="w-5 h-5" />, href: "mailto:hello@ai-inst.com", label: "Email" },
 ];
 
 export function Footer() {
@@ -123,7 +122,7 @@ export function Footer() {
 
                 {/* Bottom Bar */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-600">
-                    <p>© {new Date().getFullYear()} AI Institute. All rights reserved.</p>
+                    <p>© {new Date().getFullYear()} AI_INST. All rights reserved.</p>
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span>All Systems Operational</span>
