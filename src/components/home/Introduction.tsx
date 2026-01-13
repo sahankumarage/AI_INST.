@@ -5,10 +5,10 @@ import { useRef } from "react";
 import { Lightbulb, Target, Users, Rocket, Award, Globe } from "lucide-react";
 
 const stats = [
-    { value: "500+", label: "Students Trained", icon: Users },
     { value: "50+", label: "AI Projects Delivered", icon: Rocket },
     { value: "15+", label: "Enterprise Clients", icon: Award },
     { value: "3+", label: "Countries Served", icon: Globe },
+    { value: "500+", label: "Students Trained", icon: Users },
 ];
 
 export function Introduction() {
@@ -79,7 +79,7 @@ export function Introduction() {
                             transition={{ delay: 0.3 }}
                             className="text-lg text-slate-600 mb-8 leading-relaxed"
                         >
-                            Through our comprehensive ecosystem of education, consulting, products, and AI agents, we empower individuals and businesses to harness the full potential of artificial intelligence and stay ahead in the rapidly evolving digital landscape.
+                            Through our comprehensive ecosystem of AI agents, software products, consulting, and education, we empower individuals and businesses to harness the full potential of artificial intelligence and stay ahead in the rapidly evolving digital landscape.
                         </motion.p>
 
                         {/* Mission & Vision Pills */}
@@ -96,7 +96,7 @@ export function Introduction() {
                                 </div>
                                 <div>
                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Mission</p>
-                                    <p className="text-sm font-semibold text-slate-900">Democratize AI Education</p>
+                                    <p className="text-sm font-semibold text-slate-900">Democratize AI Innovation</p>
                                 </div>
                             </div>
 
@@ -147,7 +147,7 @@ export function Introduction() {
                                     </div>
 
                                     <div className="space-y-4 mb-8">
-                                        {["Education & Training", "AI Consulting", "Software Products", "Intelligent Agents"].map((item, i) => (
+                                        {["Intelligent Agents", "Software Products", "AI Consulting", "Education & Training"].map((item, i) => (
                                             <motion.div
                                                 key={i}
                                                 initial={{ opacity: 0, x: -20 }}

@@ -72,7 +72,7 @@ export function Ecosystem() {
                         transition={{ delay: 0.2 }}
                         className="text-xl text-slate-600 max-w-2xl mx-auto"
                     >
-                        We are a comprehensive AI powerhouse featuring education, consulting, products, and autonomous agents.
+                        We are a comprehensive AI powerhouse featuring products, autonomous agents, consulting, and education.
                     </motion.p>
                 </div>
 

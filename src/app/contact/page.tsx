@@ -86,7 +86,7 @@ export default function ContactPage() {
     return (
         <main className="min-h-screen bg-white overflow-hidden">
             {/* Hero Section */}
-            <section className="relative pt-32 pb-20 px-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+            <section className="relative pt-32 pb-32 px-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
                 {/* Background Elements */}
                 <div className="absolute inset-0">
                     <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />

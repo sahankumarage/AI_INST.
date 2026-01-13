@@ -25,10 +25,10 @@ import Link from "next/link";
 import Image from "next/image";
 
 const stats = [
-    { value: "500+", label: "Students Trained", icon: GraduationCap },
     { value: "50+", label: "AI Projects", icon: Code2 },
     { value: "15+", label: "Enterprise Clients", icon: Briefcase },
     { value: "3+", label: "Countries", icon: Globe },
+    { value: "500+", label: "Students Trained", icon: GraduationCap },
 ];
 
 const values = [
@@ -59,10 +59,10 @@ const values = [
 ];
 
 const services = [
-    { icon: GraduationCap, title: "AI Education", description: "Comprehensive courses from fundamentals to advanced specializations" },
-    { icon: Briefcase, title: "Consulting", description: "Strategic AI integration and digital transformation guidance" },
-    { icon: Code2, title: "Software Products", description: "Ready-to-deploy AI-powered applications for various industries" },
     { icon: Bot, title: "AI Agents", description: "Intelligent automation solutions that work around the clock" },
+    { icon: Code2, title: "Software Products", description: "Ready-to-deploy AI-powered applications for various industries" },
+    { icon: Briefcase, title: "Consulting", description: "Strategic AI integration and digital transformation guidance" },
+    { icon: GraduationCap, title: "AI Education", description: "Comprehensive courses from fundamentals to advanced specializations" },
 ];
 
 const team = [
@@ -108,7 +108,7 @@ export default function AboutPage() {
     return (
         <main className="min-h-screen bg-white overflow-hidden">
             {/* Hero Section */}
-            <section className="relative pt-32 pb-20 px-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+            <section className="relative pt-32 pb-40 px-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
                 {/* Background Elements */}
                 <div className="absolute inset-0">
                     <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -150,7 +150,7 @@ export default function AboutPage() {
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto"
+                            className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto relative z-20"
                         >
                             {stats.map((stat, i) => (
                                 <motion.div
@@ -162,7 +162,7 @@ export default function AboutPage() {
                                 >
                                     <stat.icon className="w-8 h-8 text-primary mb-3" />
                                     <div className="text-3xl md:text-4xl font-bold text-white mb-1">{stat.value}</div>
-                                    <div className="text-sm text-slate-400">{stat.label}</div>
+                                    <div className="text-sm text-slate-300">{stat.label}</div>
                                 </motion.div>
                             ))}
                         </motion.div>
@@ -351,8 +351,8 @@ export default function AboutPage() {
                                 <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                     <service.icon className="w-6 h-6 text-white" />
                                 </div>
-                                <h3 className="text-xl font-bold mb-2">{service.title}</h3>
-                                <p className="text-slate-400 text-sm">{service.description}</p>
+                                <h3 className="text-xl font-bold text-white mb-2">{service.title}</h3>
+                                <p className="text-slate-300 text-sm">{service.description}</p>
                             </motion.div>
                         ))}
                     </div>

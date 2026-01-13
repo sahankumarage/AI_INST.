@@ -19,7 +19,8 @@ import {
     Target,
     GraduationCap,
     ChevronDown,
-    Shield
+    Shield,
+    Video
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -27,6 +28,102 @@ import { useState } from "react";
 
 // Data Dictionary
 const courseData: Record<string, any> = {
+    "ai-driven-web-development": {
+        title: "AI-Driven Web Development",
+        subtitle: "8-Week Live Online Course — Learn by Doing",
+        description: "Learn by doing — build and deploy real websites using AI-assisted development. No prior experience required.",
+        longDescription: "This course is built on one principle: you learn web development by building websites, not by reading about them. Every week, you will join a live online session where you'll create something real. Technical concepts are taught through analogies and discovered through hands-on activities. By the end, you'll have multiple websites deployed and live on the internet.",
+        duration: "8 Weeks",
+        level: "Beginner",
+        sessions: 8,
+        isLiveCourse: true,
+        gradient: "from-indigo-500 to-violet-500",
+        instructor: {
+            name: "Course Instructor",
+            role: "Web Development Specialist",
+            image: "/instructors/web-dev.jpg"
+        },
+        features: [
+            { icon: Play, text: "8 live interactive sessions" },
+            { icon: MessageCircle, text: "Real-time Q&A with instructor" },
+            { icon: Download, text: "Code templates & resources" },
+            { icon: Users, text: "Small batch for personalized attention" },
+            { icon: Award, text: "Certificate of completion" },
+            { icon: Globe, text: "Deploy real websites" },
+        ],
+        syllabus: [
+            {
+                week: "Session 01",
+                title: "Your First Web Page",
+                description: "Understand the basics and build your first web page by the end of class",
+                topics: ["The Internet (Restaurant Analogy)", "HTML Structure", "CSS Styling", "JavaScript Basics", "Build a Personal Page"],
+                duration: "3 hours"
+            },
+            {
+                week: "Session 02",
+                title: "Enter the AI Assistant",
+                description: "Rebuild your Week 1 page using AI — faster and better",
+                topics: ["What is an Agentic IDE?", "AI-Built Pages", "The Art of Prompting", "Good vs Bad Prompts", "Prompt Formula"],
+                duration: "3 hours"
+            },
+            {
+                week: "Session 03",
+                title: "Introduction to Next.js",
+                description: "Understand how Next.js works and why it's useful",
+                topics: ["Why Next.js? (Construction Analogy)", "Components (LEGO Analogy)", "File Structure", "Page Routing", "First Next.js Project"],
+                duration: "3 hours"
+            },
+            {
+                week: "Session 04",
+                title: "Building with Next.js",
+                description: "Build a complete multi-page website using AI assistance",
+                topics: ["Navigation Component", "Home Page", "About Page", "Services Page", "Contact Page", "Footer Component"],
+                duration: "3 hours"
+            },
+            {
+                week: "Session 05",
+                title: "Review and Refinement",
+                description: "Review student work, answer questions, and improve projects",
+                topics: ["Homework Showcase", "Common Issues Workshop", "Q&A Deep Dive", "Styling Enhancement", "Typography & Colors"],
+                duration: "3 hours"
+            },
+            {
+                week: "Session 06",
+                title: "Git, GitHub, and Vercel",
+                description: "Understand version control and deploy your first site",
+                topics: ["What is Git?", "What is GitHub?", "Git Commands", "Connect to Vercel", "Continuous Deployment"],
+                duration: "3 hours"
+            },
+            {
+                week: "Session 07",
+                title: "Build and Deploy from Scratch",
+                description: "Apply everything — build a new site and deploy it in one session",
+                topics: ["Project Planning", "Setup & GitHub", "Build with AI", "Deploy to Vercel", "Show and Tell"],
+                duration: "3 hours"
+            },
+            {
+                week: "Session 08",
+                title: "A Glimpse to the Future",
+                description: "See what's possible next and plan your continued learning journey",
+                topics: ["Course Reflection", "Databases (Supabase)", "Authentication", "APIs", "Learning Path", "Final Showcase"],
+                duration: "3 hours"
+            }
+        ],
+        outcomes: [
+            "Build websites from scratch with HTML, CSS, and JavaScript",
+            "Use AI assistants to accelerate development",
+            "Create modern web apps with Next.js",
+            "Master Git version control and GitHub",
+            "Deploy live websites on Vercel",
+            "Write effective AI prompts for coding"
+        ],
+        whoIsThisFor: [
+            { title: "Complete Beginners", description: "No prior coding experience needed" },
+            { title: "Career Changers", description: "Transition into web development" },
+            { title: "Entrepreneurs", description: "Build your own websites and apps" },
+            { title: "Curious Minds", description: "Anyone interested in AI-assisted development" },
+        ]
+    },
     "ai-fundamentals-for-everyone": {
         title: "AI Fundamentals for Everyone",
         subtitle: "Your gateway to understanding artificial intelligence",
@@ -291,25 +388,46 @@ export default function CourseDetail() {
 
                                 {/* Stats Row */}
                                 <div className="flex flex-wrap gap-6">
-                                    <div className="flex items-center gap-2 text-white">
-                                        <Star className="w-5 h-5 text-amber-400 fill-current" />
-                                        <span className="font-bold">{course.rating}</span>
-                                        <span className="text-slate-400">rating</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-white">
-                                        <Users className="w-5 h-5 text-slate-400" />
-                                        <span className="font-bold">{course.students}</span>
-                                        <span className="text-slate-400">students</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-white">
-                                        <Clock className="w-5 h-5 text-slate-400" />
-                                        <span className="font-bold">{course.duration}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-white">
-                                        <BookOpen className="w-5 h-5 text-slate-400" />
-                                        <span className="font-bold">{course.lessons}</span>
-                                        <span className="text-slate-400">lessons</span>
-                                    </div>
+                                    {course.isLiveCourse ? (
+                                        <>
+                                            <div className="flex items-center gap-2 text-white">
+                                                <Video className="w-5 h-5 text-emerald-400" />
+                                                <span className="font-bold">Live</span>
+                                                <span className="text-slate-400">online sessions</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-white">
+                                                <Clock className="w-5 h-5 text-slate-400" />
+                                                <span className="font-bold">{course.duration}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-white">
+                                                <Calendar className="w-5 h-5 text-slate-400" />
+                                                <span className="font-bold">{course.sessions}</span>
+                                                <span className="text-slate-400">sessions</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="flex items-center gap-2 text-white">
+                                                <Star className="w-5 h-5 text-amber-400 fill-current" />
+                                                <span className="font-bold">{course.rating}</span>
+                                                <span className="text-slate-400">rating</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-white">
+                                                <Users className="w-5 h-5 text-slate-400" />
+                                                <span className="font-bold">{course.students}</span>
+                                                <span className="text-slate-400">students</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-white">
+                                                <Clock className="w-5 h-5 text-slate-400" />
+                                                <span className="font-bold">{course.duration}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-white">
+                                                <BookOpen className="w-5 h-5 text-slate-400" />
+                                                <span className="font-bold">{course.lessons}</span>
+                                                <span className="text-slate-400">lessons</span>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </motion.div>
                         </div>
@@ -338,10 +456,12 @@ export default function CourseDetail() {
                                     Enroll Now
                                 </motion.button>
 
-                                <p className="text-center text-sm text-slate-500 mb-6 flex items-center justify-center gap-2">
-                                    <Shield className="w-4 h-4" />
-                                    30-day money-back guarantee
-                                </p>
+                                {!course.isLiveCourse && (
+                                    <p className="text-center text-sm text-slate-500 mb-6 flex items-center justify-center gap-2">
+                                        <Shield className="w-4 h-4" />
+                                        30-day money-back guarantee
+                                    </p>
+                                )}
 
                                 {/* Features */}
                                 <div className="border-t border-slate-100 pt-6">

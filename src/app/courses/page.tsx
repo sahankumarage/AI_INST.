@@ -6,6 +6,16 @@ import Link from "next/link";
 
 const courses = [
     {
+        title: "AI-Driven Web Development",
+        description: "Learn by doing — build and deploy real websites using AI-assisted development. No prior experience required.",
+        level: "Beginner",
+        duration: "8 Weeks",
+        rating: 4.9,
+        category: "Hands-On",
+        imageGradient: "from-indigo-500 to-violet-500",
+        icon: <Code className="w-6 h-6 text-white" />
+    },
+    {
         title: "AI Fundamentals for Everyone",
         description: "Master the basics of Artificial Intelligence, from neural networks to ethical considerations. No coding experience required.",
         level: "Beginner",
