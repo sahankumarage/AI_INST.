@@ -5,10 +5,10 @@ import { useRef } from "react";
 import { Lightbulb, Target, Users, Rocket, Award, Globe } from "lucide-react";
 
 const stats = [
-    { value: "50+", label: "AI Projects Delivered", icon: Rocket },
-    { value: "15+", label: "Enterprise Clients", icon: Award },
-    { value: "3+", label: "Countries Served", icon: Globe },
-    { value: "500+", label: "Students Trained", icon: Users },
+    { value: "5+", label: "AI Projects Delivered", icon: Rocket },
+    { value: "10+", label: "Enterprise Clients", icon: Award },
+    { value: "5+", label: "Countries Served", icon: Globe },
+    { value: "50+", label: "Students Trained", icon: Users },
 ];
 
 export function Introduction() {
@@ -69,7 +69,7 @@ export function Introduction() {
                             transition={{ delay: 0.2 }}
                             className="text-lg text-slate-600 mb-6 leading-relaxed"
                         >
-                            AI_INST. is a pioneering technology company dedicated to democratizing artificial intelligence. We believe that AI should be accessible, practical, and transformative for everyone—from ambitious learners to enterprise organizations.
+                            AI_INST. is a pioneering technology company dedicated to democratizing artificial intelligence. We believe that AI should be accessible, practical, and transformative for everyone, from ambitious learners to enterprise organizations.
                         </motion.p>
 
                         <motion.p

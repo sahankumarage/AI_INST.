@@ -246,9 +246,7 @@ export function VideoSection({
                     transition={{ delay: 0.4 }}
                     className="mt-8 text-center"
                 >
-                    <p className="text-slate-500 text-sm">
-                        <span className="font-semibold text-slate-700">2:45</span> • Our founding team shares their journey and vision
-                    </p>
+
                 </motion.div>
             </div>
         </section>

@@ -36,15 +36,18 @@ export default function Home() {
           </p>
 
           <div className="flex flex-wrap gap-4">
-            <Link href="/services">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="px-8 py-4 bg-primary text-white rounded-full font-semibold shadow-lg shadow-primary/25 hover:bg-ocean-dark transition-colors flex items-center gap-2"
-              >
-                Explore Services <ArrowRight className="w-5 h-5" />
-              </motion.button>
-            </Link>
+            <motion.a
+              href="#ecosystem"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-8 py-4 bg-primary text-white rounded-full font-semibold shadow-lg shadow-primary/25 hover:bg-ocean-dark transition-colors flex items-center gap-2 cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('ecosystem')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Explore Services <ArrowRight className="w-5 h-5" />
+            </motion.a>
 
             <Link href="/about">
               <motion.button
