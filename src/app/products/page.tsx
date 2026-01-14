@@ -1,149 +1,230 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Activity, Cloud, Key, Smartphone, Check, ArrowRight, Sparkles, Zap } from "lucide-react";
+import { Activity, Cloud, Key, Smartphone, ArrowRight, Sparkles, Zap, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { products } from "@/data/products";
 
 // Icon mapping for products
 const iconMap: { [key: string]: React.ReactNode } = {
-    "smart-clinic-manager": <Activity className="w-7 h-7" />,
-    "ai-analytics-suite": <Cloud className="w-7 h-7" />,
-    "vision-api": <Key className="w-7 h-7" />,
-    "content-engine": <Smartphone className="w-7 h-7" />,
+    "smart-clinic-manager": <Activity className="w-8 h-8" />,
+    "ai-analytics-suite": <Cloud className="w-8 h-8" />,
+    "vision-api": <Key className="w-8 h-8" />,
+    "content-engine": <Smartphone className="w-8 h-8" />,
 };
 
 export default function ProductsPage() {
     return (
-        <main className="min-h-screen pt-32 pb-20 px-6 bg-gradient-to-b from-slate-50 via-white to-slate-50">
-            <div className="max-w-7xl mx-auto">
-                {/* Hero Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center mb-20"
-                >
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.1 }}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 mb-6"
-                    >
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-semibold text-primary tracking-wide">Our Products</span>
-                    </motion.div>
+        <main className="min-h-screen bg-slate-950 text-white overflow-hidden">
 
-                    <h1 className="text-4xl md:text-6xl font-bold text-slate-900 mb-6">
-                        Intelligent Software
-                        <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent">
-                            Built for Scale
-                        </span>
-                    </h1>
-                    <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-                        Scalable, secure, and powerful AI products designed to accelerate your innovation.
-                    </p>
-                </motion.div>
-
-                {/* Products Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {products.map((product, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.15, duration: 0.5 }}
-                            className="group relative"
-                        >
-                            {/* Card */}
-                            <div className={`relative overflow-hidden rounded-3xl bg-white border border-slate-200/80 shadow-xl ${product.shadowColor} hover:shadow-2xl transition-all duration-500`}>
-
-                                {/* Gradient Header */}
-                                <div className={`relative h-32 bg-gradient-to-r ${product.gradient} p-6 overflow-hidden`}>
-                                    {/* Decorative circles */}
-                                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
-                                    <div className="absolute -bottom-20 -left-10 w-60 h-60 bg-white/5 rounded-full" />
-
-                                    {/* Badge */}
-                                    <div className="relative flex justify-between items-start">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${product.badgeColor}`}>
-                                            {product.badge}
-                                        </span>
-
-                                        {/* Icon */}
-                                        <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white shadow-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                                            {iconMap[product.slug]}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Content */}
-                                <div className="p-8 pt-6">
-                                    <p className="text-xs font-bold tracking-wider text-slate-400 uppercase mb-1">
-                                        {product.subtitle}
-                                    </p>
-                                    <h3 className="text-2xl font-bold text-slate-900 mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-primary group-hover:to-secondary transition-all duration-300">
-                                        {product.title}
-                                    </h3>
-                                    <p className="text-slate-500 leading-relaxed mb-6">
-                                        {product.description}
-                                    </p>
-
-                                    {/* Features */}
-                                    <div className="grid grid-cols-2 gap-3 mb-8">
-                                        {product.features.map((feature, i) => (
-                                            <div key={i} className="flex items-center gap-2 text-sm text-slate-600">
-                                                <div className={`w-5 h-5 rounded-full bg-gradient-to-r ${product.gradient} flex items-center justify-center flex-shrink-0`}>
-                                                    <Check className="w-3 h-3 text-white" />
-                                                </div>
-                                                {feature}
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {/* CTA */}
-                                    <Link href={`/products/${product.slug}`} className="block">
-                                        <motion.button
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            className={`w-full px-6 py-4 rounded-2xl bg-gradient-to-r ${product.gradient} text-white font-semibold shadow-lg ${product.shadowColor} hover:shadow-xl flex items-center justify-center gap-2 transition-all`}
-                                        >
-                                            Learn More
-                                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                        </motion.button>
-                                    </Link>
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
+            {/* Hero Section */}
+            <section className="relative pt-32 pb-20 px-6 overflow-hidden">
+                {/* Gradient Mesh Background */}
+                <div className="absolute inset-0">
+                    <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[150px]" />
+                    <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-violet-600/20 rounded-full blur-[120px]" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-600/10 rounded-full blur-[180px]" />
                 </div>
 
-                {/* Bottom CTA */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.8 }}
-                    className="mt-20 text-center"
-                >
-                    <div className="inline-flex flex-col sm:flex-row items-center gap-4 p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-                                <Zap className="w-6 h-6 text-white" />
+                <div className="max-w-6xl mx-auto relative z-10">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                        className="text-center mb-20"
+                    >
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 text-emerald-400 font-medium text-sm mb-6">
+                            <Sparkles className="w-4 h-4" />
+                            AI-Powered Products
+                        </div>
+                        <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
+                            Software That
+                            <br />
+                            <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                                Thinks Ahead
+                            </span>
+                        </h1>
+                        <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+                            Enterprise-grade AI products built for scale. From healthcare to analytics, power your business with intelligent software.
+                        </p>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* Products - Bento Grid Style */}
+            <section className="px-6 pb-24">
+                <div className="max-w-6xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {products.map((product, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 40 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.6, delay: index * 0.1 }}
+                                className={`group relative ${index === 0 ? 'md:col-span-2' : ''}`}
+                            >
+                                <Link href={`/products/${product.slug}`} className="block h-full">
+                                    <div className={`
+                                        relative h-full overflow-hidden rounded-3xl 
+                                        bg-gradient-to-br from-slate-900 via-slate-800/50 to-slate-900
+                                        border border-slate-700/50 hover:border-slate-600
+                                        transition-all duration-500
+                                        ${index === 0 ? 'p-8 md:p-12' : 'p-8'}
+                                    `}>
+                                        {/* Gradient Glow on Hover */}
+                                        <div className={`absolute inset-0 bg-gradient-to-br ${product.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+
+                                        {/* Corner Glow */}
+                                        <div className={`absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br ${product.gradient} opacity-20 blur-3xl group-hover:opacity-40 transition-opacity duration-500`} />
+
+                                        <div className="relative z-10">
+                                            {/* Top Row: Icon + Badge */}
+                                            <div className="flex items-start justify-between mb-6">
+                                                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${product.gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
+                                                    {iconMap[product.slug]}
+                                                </div>
+                                                <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${product.badgeColor}`}>
+                                                    {product.badge}
+                                                </span>
+                                            </div>
+
+                                            {/* Title & Subtitle */}
+                                            <div className="mb-4">
+                                                <span className="text-xs font-bold tracking-widest text-slate-500 uppercase block mb-2">
+                                                    {product.subtitle}
+                                                </span>
+                                                <h3 className={`font-bold text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:${product.gradient} transition-all duration-300 ${index === 0 ? 'text-3xl md:text-4xl' : 'text-2xl md:text-3xl'}`}>
+                                                    {product.title}
+                                                </h3>
+                                            </div>
+
+                                            {/* Description */}
+                                            <p className={`text-slate-400 leading-relaxed mb-8 ${index === 0 ? 'text-lg max-w-2xl' : ''}`}>
+                                                {index === 0 ? product.longDescription : product.description}
+                                            </p>
+
+                                            {/* Features as Pills */}
+                                            <div className="flex flex-wrap gap-2 mb-8">
+                                                {product.features.map((feature, i) => (
+                                                    <span
+                                                        key={i}
+                                                        className="px-3 py-1.5 rounded-full bg-slate-800/80 text-slate-300 text-sm border border-slate-700/50"
+                                                    >
+                                                        {feature}
+                                                    </span>
+                                                ))}
+                                            </div>
+
+                                            {/* CTA */}
+                                            <div className="flex items-center gap-2 text-white font-semibold group-hover:text-emerald-400 transition-colors">
+                                                <span>Explore Product</span>
+                                                <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
+                                            </div>
+                                        </div>
+
+                                        {/* Floating External Link Icon */}
+                                        <div className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <ExternalLink className="w-4 h-4 text-white" />
+                                        </div>
+                                    </div>
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Bottom Highlight Section */}
+            <section className="px-6 pb-24">
+                <div className="max-w-6xl mx-auto">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                        className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8"
+                    >
+                        <div className="text-center p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+                                99.9%
                             </div>
-                            <div className="text-left">
-                                <p className="font-bold">Need a Custom Solution?</p>
-                                <p className="text-sm text-slate-400">Let's build something amazing together.</p>
+                            <p className="text-slate-500 text-sm font-medium">Uptime SLA</p>
+                        </div>
+                        <div className="text-center p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent mb-2">
+                                50K+
+                            </div>
+                            <p className="text-slate-500 text-sm font-medium">API Requests/min</p>
+                        </div>
+                        <div className="text-center p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent mb-2">
+                                100+
+                            </div>
+                            <p className="text-slate-500 text-sm font-medium">Integrations</p>
+                        </div>
+                        <div className="text-center p-6 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent mb-2">
+                                24/7
+                            </div>
+                            <p className="text-slate-500 text-sm font-medium">Support</p>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* CTA Section */}
+            <section className="px-6 pb-32">
+                <div className="max-w-4xl mx-auto">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                        className="relative rounded-3xl overflow-hidden"
+                    >
+                        {/* Gradient Background */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600" />
+                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
+
+                        {/* Decorative Elements */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
+
+                        <div className="relative z-10 p-10 md:p-16 text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-6">
+                                <Zap className="w-8 h-8 text-white" />
+                            </div>
+                            <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                                Need a Custom Solution?
+                            </h3>
+                            <p className="text-white/80 text-lg mb-8 max-w-xl mx-auto">
+                                Can't find exactly what you need? Let's build something tailor-made for your business.
+                            </p>
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                <Link href="/contact">
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="px-8 py-4 rounded-full bg-white text-slate-900 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+                                    >
+                                        Contact Us <ArrowRight className="w-5 h-5" />
+                                    </motion.button>
+                                </Link>
+                                <Link href="/consulting">
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="px-8 py-4 rounded-full bg-white/10 text-white font-semibold border border-white/30 hover:bg-white/20 transition-all duration-300"
+                                    >
+                                        Explore Consulting
+                                    </motion.button>
+                                </Link>
                             </div>
                         </div>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="px-6 py-3 rounded-full bg-white text-slate-900 font-semibold text-sm hover:bg-slate-100 transition-colors flex items-center gap-2"
-                        >
-                            Contact Us <ArrowRight className="w-4 h-4" />
-                        </motion.button>
-                    </div>
-                </motion.div>
-            </div>
+                    </motion.div>
+                </div>
+            </section>
         </main>
     );
 }
