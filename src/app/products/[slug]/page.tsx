@@ -16,13 +16,18 @@ import {
     Zap,
     Shield,
     Layers,
-    Code2
+    Code2,
+    Car,
+    Share2
 } from "lucide-react";
 import { getProductBySlug, products } from "@/data/products";
 import { UIShowcaseSection } from "@/components/products/UIShowcaseSection";
 
 // Icon mapping for products
 const iconMap: { [key: string]: React.ReactNode } = {
+    "medflow-ai": <Activity className="w-10 h-10" />,
+    "flipka-ai": <Car className="w-10 h-10" />,
+    "postpilot-ai": <Share2 className="w-10 h-10" />,
     "smart-clinic-manager": <Activity className="w-10 h-10" />,
     "ai-analytics-suite": <Cloud className="w-10 h-10" />,
     "vision-api": <Key className="w-10 h-10" />,
@@ -116,16 +121,26 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                             </motion.div>
                         </div>
 
-                        {/* Icon/Visual */}
+                        {/* Logo/Icon Visual */}
                         <motion.div
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.2, duration: 0.5 }}
                             className="flex-shrink-0"
                         >
-                            <div className="w-48 h-48 md:w-64 md:h-64 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white shadow-2xl">
-                                {iconMap[product.slug]}
-                            </div>
+                            {product.logo ? (
+                                <div className="w-48 h-48 md:w-64 md:h-64 rounded-3xl bg-white flex items-center justify-center shadow-2xl p-6">
+                                    <img
+                                        src={product.logo}
+                                        alt={`${product.title} logo`}
+                                        className="w-full h-full object-contain"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="w-48 h-48 md:w-64 md:h-64 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white shadow-2xl">
+                                    {iconMap[product.slug]}
+                                </div>
+                            )}
                         </motion.div>
                     </div>
                 </div>
@@ -171,17 +186,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                         ))}
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* UI Showcase Section - Scroll-Jacking Feature Tour */}
-            <UIShowcaseSection
+            < UIShowcaseSection
                 showcase={product.uiShowcase}
                 gradient={product.gradient}
                 productTitle={product.title}
             />
 
             {/* Benefits Section */}
-            <section className="py-20 px-6">
+            < section className="py-20 px-6" >
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
                         <motion.span
@@ -226,10 +241,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                         })}
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* Use Cases & Tech Specs */}
-            <section className="py-20 px-6 bg-slate-900 text-white">
+            < section className="py-20 px-6 bg-slate-900 text-white" >
                 <div className="max-w-6xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
                         {/* Use Cases */}
@@ -292,10 +307,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                         </motion.div>
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* CTA Section */}
-            <section className="py-20 px-6">
+            < section className="py-20 px-6" >
                 <div className="max-w-4xl mx-auto text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -331,7 +346,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                         </div>
                     </motion.div>
                 </div>
-            </section>
-        </main>
+            </section >
+        </main >
     );
 }

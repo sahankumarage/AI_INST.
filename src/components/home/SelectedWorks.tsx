@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, ExternalLink, Handshake, Award, Users, Globe, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 const partners = [
     {
@@ -10,7 +11,7 @@ const partners = [
         description: "Collaborating on cutting-edge AI infrastructure and cloud solutions for enterprise deployments.",
         logo: "TV",
         gradient: "from-blue-600 to-indigo-700",
-        stats: { projects: "24+", years: "5" },
+        stats: { projects: "2+", years: "1" },
         website: "#"
     },
     {
@@ -19,7 +20,7 @@ const partners = [
         description: "Joint research initiatives in machine learning, neural networks, and advanced AI algorithms.",
         logo: "IL",
         gradient: "from-emerald-600 to-teal-700",
-        stats: { projects: "18+", years: "3" },
+        stats: { projects: "4+", years: "1" },
         website: "#"
     },
     {
@@ -28,43 +29,17 @@ const partners = [
         description: "Providing high-quality datasets and analytics infrastructure for AI model training.",
         logo: "DA",
         gradient: "from-violet-600 to-purple-700",
-        stats: { projects: "32+", years: "4" },
+        stats: { projects: "5+", years: "1" },
         website: "#"
     },
-    {
-        name: "CloudNine Systems",
-        category: "Infrastructure Partner",
-        description: "Powering our AI solutions with scalable cloud computing and edge deployment capabilities.",
-        logo: "CN",
-        gradient: "from-orange-500 to-rose-600",
-        stats: { projects: "15+", years: "2" },
-        website: "#"
-    },
-    {
-        name: "NeuralPath Inc",
-        category: "AI Research",
-        description: "Pioneering breakthroughs in generative AI and natural language processing together.",
-        logo: "NP",
-        gradient: "from-cyan-500 to-blue-600",
-        stats: { projects: "21+", years: "4" },
-        website: "#"
-    },
-    {
-        name: "FutureTech Academy",
-        category: "Education Partner",
-        description: "Co-developing curriculum and certification programs for the next generation of AI professionals.",
-        logo: "FT",
-        gradient: "from-pink-500 to-rose-600",
-        stats: { projects: "12+", years: "3" },
-        website: "#"
-    }
+
 ];
 
 const stats = [
-    { icon: Handshake, value: "50+", label: "Global Partners" },
-    { icon: Award, value: "200+", label: "Joint Projects" },
-    { icon: Users, value: "10K+", label: "Trained Together" },
-    { icon: Globe, value: "25+", label: "Countries" }
+    { icon: Handshake, value: "3+", label: "Global Partners" },
+    { icon: Award, value: "10+", label: "Joint Projects" },
+    { icon: Users, value: "1K+", label: "Trained Together" },
+    { icon: Globe, value: "4+", label: "Countries" }
 ];
 
 export function SelectedWorks() {
@@ -171,15 +146,8 @@ export function SelectedWorks() {
                                 </div>
                             </div>
 
-                            {/* Link */}
-                            <div className="flex items-center justify-between relative z-10">
-                                <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 group-hover:text-blue-600 transition-colors duration-300">
-                                    View Partnership <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-                                </div>
-                                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 group-hover:bg-blue-600">
-                                    <ExternalLink className="w-4 h-4 text-slate-600 group-hover:text-white transition-colors duration-300" />
-                                </div>
-                            </div>
+
+
 
                             {/* Decorative Corner */}
                             <div className={`absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-gradient-to-br ${partner.gradient} opacity-0 group-hover:opacity-10 blur-2xl transition-opacity duration-500`} />
@@ -196,20 +164,17 @@ export function SelectedWorks() {
                     className="mt-16 md:mt-20 text-center"
                 >
                     <div className="inline-flex flex-col sm:flex-row items-center gap-4">
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="px-8 py-4 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 text-white font-semibold shadow-lg hover:shadow-xl hover:shadow-blue-500/25 transition-all duration-300 flex items-center gap-2"
-                        >
-                            Become a Partner <ArrowRight className="w-4 h-4" />
-                        </motion.button>
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="px-8 py-4 rounded-full bg-white text-slate-700 font-semibold border border-slate-200 hover:border-blue-300 hover:text-blue-600 transition-all duration-300"
-                        >
-                            View All Partners
-                        </motion.button>
+                        <Link href="/contact">
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+
+                                className="px-8 py-4 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 text-white font-semibold shadow-lg hover:shadow-xl hover:shadow-blue-500/25 transition-all duration-300 flex items-center gap-2"
+                            >
+                                Become a Partner <ArrowRight className="w-4 h-4" />
+                            </motion.button>
+                        </Link>
+
                     </div>
                 </motion.div>
             </div>

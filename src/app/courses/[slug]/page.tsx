@@ -19,7 +19,6 @@ import {
     Target,
     GraduationCap,
     ChevronDown,
-    Shield,
     Video
 } from "lucide-react";
 import Link from "next/link";
@@ -238,93 +237,73 @@ const courseData: Record<string, any> = {
             { title: "AI Enthusiasts", description: "Self-learners with strong math background" },
         ]
     },
-    "generative-ai-and-llms": {
-        title: "Generative AI & LLMs",
-        subtitle: "Build production-ready AI applications",
-        description: "Learn to fine-tune Large Language Models and build custom RAG pipelines for enterprise applications.",
-        longDescription: "Focusing on the hottest topic in tech, this course is practical and hands-on. You will learn how to take open-source models like Llama and Mistral, fine-tune them on custom datasets, and build Retrieval-Augmented Generation (RAG) systems that don't hallucinate.",
-        duration: "8 Weeks",
-        level: "Intermediate",
-        rating: 4.9,
-        students: "3,100+",
-        lessons: 48,
-        gradient: "from-orange-500 to-red-500",
-        instructor: {
-            name: "Alex Rivera",
-            role: "GenAI Specialist",
-            image: "/instructors/alex.jpg"
-        },
-        features: [
-            { icon: BookOpen, text: "48 practical lessons" },
-            { icon: Play, text: "32 hours of content" },
-            { icon: Download, text: "Production templates" },
-            { icon: MessageCircle, text: "Discord community" },
-            { icon: Award, text: "Verified certificate" },
-            { icon: Globe, text: "Lifetime updates" },
-        ],
-        syllabus: [
-            { week: "Week 01-02", title: "LLM Foundations", description: "Understand how language models work", topics: ["Transformer Architecture", "Tokenization", "Embeddings"], duration: "8 hours" },
-            { week: "Week 03-04", title: "Prompt Engineering & RAG", description: "Build systems that don't hallucinate", topics: ["Advanced Prompting", "Vector Databases", "LangChain & LlamaIndex"], duration: "8 hours" },
-            { week: "Week 05-06", title: "Fine-Tuning", description: "Customize models for your use case", topics: ["PEFT & LoRA", "Dataset Preparation", "Training on Consumer GPUs"], duration: "8 hours" },
-            { week: "Week 07-08", title: "Deployment & Agents", description: "Ship AI to production", topics: ["Serving Models", "AutoGPT & Agents", "Evaluation Frameworks"], duration: "8 hours" }
-        ],
-        outcomes: [
-            "Build custom RAG chatbots",
-            "Fine-tune LLMs for specific domains",
-            "Deploy models to production",
-            "Understand the modern AI stack",
-            "Create autonomous AI agents",
-            "Evaluate and improve model outputs"
-        ],
-        whoIsThisFor: [
-            { title: "Developers", description: "Engineers building AI-powered apps" },
-            { title: "Product Managers", description: "PMs integrating AI into products" },
-            { title: "Startup Founders", description: "Entrepreneurs building AI startups" },
-            { title: "Tech Leads", description: "Leaders adopting AI in their teams" },
-        ]
-    },
-    "ai-strategy-for-leaders": {
-        title: "AI Strategy for Leaders",
-        subtitle: "Transform your organization with AI",
-        description: "For executives and managers: how to implement AI strategies that drive business value and ROI.",
-        longDescription: "AI is an executive-level priority. This course equips decision-makers with the frameworks to assess AI maturity, identify high-value use cases, and manage the organizational change required for successful AI adoption.",
-        duration: "3 Weeks",
+    "ai-powered-content-creation": {
+        title: "AI-Powered Content Creation",
+        subtitle: "Create Stunning Content with AI Tools",
+        description: "Create stunning content with AI tools — from writing compelling copy to generating images and videos for social media, blogs, and marketing.",
+        longDescription: "In this hands-on course, you'll master the art of creating professional content using the latest AI tools. From crafting viral social media posts to generating eye-catching images and editing videos with AI assistance, you'll learn everything you need to become a content creation powerhouse. No technical background required — just creativity and curiosity!",
+        duration: "4 Weeks",
         level: "Beginner",
-        rating: 4.7,
-        students: "890+",
-        lessons: 15,
-        gradient: "from-emerald-500 to-teal-500",
+        rating: 4.8,
+        students: "4,200+",
+        lessons: 20,
+        gradient: "from-rose-500 via-pink-500 to-orange-400",
         instructor: {
-            name: "Emma Williams",
-            role: "AI Strategy Consultant",
-            image: "/instructors/emma.jpg"
+            name: "Content Creation Team",
+            role: "AI Content Specialists",
+            image: "/instructors/content.jpg"
         },
         features: [
-            { icon: BookOpen, text: "15 strategic lessons" },
-            { icon: Play, text: "8 hours of content" },
-            { icon: Download, text: "Strategy templates" },
-            { icon: MessageCircle, text: "Executive network" },
-            { icon: Award, text: "Leadership certificate" },
-            { icon: Globe, text: "Quarterly updates" },
+            { icon: BookOpen, text: "20 practical lessons" },
+            { icon: Play, text: "15 hours of video content" },
+            { icon: Download, text: "100+ templates & prompts" },
+            { icon: MessageCircle, text: "Community access" },
+            { icon: Award, text: "Certificate of completion" },
+            { icon: Globe, text: "Lifetime access" },
         ],
         syllabus: [
-            { week: "Week 01", title: "The Executive AI Landscape", description: "Understand the current AI landscape and opportunities", topics: ["State of AI", "Hype vs Reality", "Competitor Analysis"], duration: "4 hours" },
-            { week: "Week 02", title: "Strategic Implementation", description: "Make the right build vs buy decisions", topics: ["Build vs Buy", "Talent & Hiring", "Risk Management"], duration: "4 hours" },
-            { week: "Week 03", title: "Future-Proofing", description: "Prepare your organization for the AI future", topics: ["AI Governance", "Scalability", "Case Studies"], duration: "4 hours" }
+            {
+                week: "Week 01",
+                title: "AI Writing Mastery",
+                description: "Learn to write compelling content with AI assistance",
+                topics: ["ChatGPT & Claude for Writing", "Blog Post Creation", "Social Media Captions", "Email Copy that Converts", "SEO-Optimized Content"],
+                duration: "4 hours"
+            },
+            {
+                week: "Week 02",
+                title: "AI Image Generation",
+                description: "Create stunning visuals without design skills",
+                topics: ["Midjourney Fundamentals", "DALL-E & Leonardo AI", "Prompt Engineering for Images", "Brand Consistent Visuals", "Editing & Upscaling"],
+                duration: "4 hours"
+            },
+            {
+                week: "Week 03",
+                title: "Video & Audio AI",
+                description: "Produce professional videos and audio content",
+                topics: ["AI Video Editing Tools", "Text-to-Video Generation", "AI Voice & Narration", "Background Music with AI", "Podcast Enhancement"],
+                duration: "4 hours"
+            },
+            {
+                week: "Week 04",
+                title: "Content Strategy & Workflow",
+                description: "Build a sustainable AI-powered content system",
+                topics: ["Content Calendar with AI", "Repurposing Content", "Brand Voice Consistency", "Automation Workflows", "Final Portfolio Project"],
+                duration: "4 hours"
+            }
         ],
         outcomes: [
-            "Assess AI ROI accurately",
-            "Lead AI transformation initiatives",
-            "Mitigate legal and reputational risks",
-            "Foster an AI-first culture",
-            "Build high-performing AI teams",
-            "Create sustainable AI governance"
+            "Write engaging blog posts, emails, and social media content with AI",
+            "Generate professional images using Midjourney and DALL-E",
+            "Create and edit videos with AI-powered tools",
+            "Build a consistent brand voice across all content",
+            "Develop an efficient AI content creation workflow",
+            "Launch a complete content portfolio"
         ],
         whoIsThisFor: [
-            { title: "C-Suite Executives", description: "CEOs, CTOs, and CDOs driving AI strategy" },
-            { title: "Directors", description: "Leaders implementing AI in their departments" },
-            { title: "Consultants", description: "Advisors helping clients with AI adoption" },
-            { title: "Board Members", description: "Governance leaders overseeing AI initiatives" },
+            { title: "Content Creators", description: "Bloggers, YouTubers, and influencers wanting to scale" },
+            { title: "Marketers", description: "Marketing professionals looking to boost productivity" },
+            { title: "Entrepreneurs", description: "Business owners creating their own content" },
+            { title: "Freelancers", description: "Writers and designers expanding their AI skills" },
         ]
     }
 };
@@ -456,12 +435,7 @@ export default function CourseDetail() {
                                     Enroll Now
                                 </motion.button>
 
-                                {!course.isLiveCourse && (
-                                    <p className="text-center text-sm text-slate-500 mb-6 flex items-center justify-center gap-2">
-                                        <Shield className="w-4 h-4" />
-                                        30-day money-back guarantee
-                                    </p>
-                                )}
+
 
                                 {/* Features */}
                                 <div className="border-t border-slate-100 pt-6">

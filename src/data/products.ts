@@ -15,6 +15,7 @@ export interface Product {
     shadowColor: string;
     badge: string;
     badgeColor: string;
+    logo?: string; // Optional: Path to product logo (e.g., "/images/Logo/medflow-logo.png")
     features: string[];
     benefits: {
         title: string;
@@ -30,200 +31,138 @@ export interface Product {
 
 export const products: Product[] = [
     {
-        slug: "smart-clinic-manager",
-        title: "Smart Clinic Manager",
-        subtitle: "Healthcare Management",
-        description: "Complete appointment scheduling and institute management system for modern healthcare facilities.",
-        longDescription: "Smart Clinic Manager is a comprehensive healthcare management platform designed to streamline operations for clinics, hospitals, and medical practices. Built with AI at its core, it automates scheduling, manages patient records securely, and provides actionable insights through advanced analytics.",
-        gradient: "from-teal-500 via-emerald-500 to-cyan-500",
-        shadowColor: "shadow-teal-500/25",
-        badge: "Popular",
-        badgeColor: "bg-amber-400 text-amber-900",
-        features: ["Appointment Scheduling", "Patient Records", "Billing Integration", "Analytics Dashboard"],
+        slug: "medflow-ai",
+        title: "MedFlow AI",
+        subtitle: "AI-Powered Healthcare",
+        description: "State-of-the-art AI-integrated healthcare management platform for clinics and rehabilitation centers.",
+        longDescription: "MedFlow AI is a state-of-the-art, AI-integrated healthcare management platform designed for modern clinics and rehabilitation centers. Our platform seamlessly combines intelligent automation, predictive analytics, and modern communication tools to deliver an unparalleled healthcare management experience. Built with enterprise-grade technology and powered by advanced AI systems including GPT-4 and Gemini integration.",
+        gradient: "from-emerald-600 via-teal-500 to-cyan-500",
+        shadowColor: "shadow-emerald-500/25",
+        badge: "AI Powered",
+        badgeColor: "bg-purple-100 text-purple-700",
+        logo: "/images/Logo/medflow-ai-logo.png",
+        features: ["AI Content Generation", "Smart Scheduling", "WhatsApp Automation", "Predictive Analytics"],
         benefits: [
             {
-                title: "Reduce No-Shows by 60%",
-                description: "AI-powered reminder system with smart scheduling reduces missed appointments significantly."
+                title: "Reduce No-Shows by 40%",
+                description: "AI-powered WhatsApp reminders with Twilio integration dramatically reduce missed appointments."
             },
             {
-                title: "Paperless Operations",
-                description: "Digitize all patient records with secure cloud storage and instant retrieval."
+                title: "Save 15+ Hours Weekly",
+                description: "Intelligent automation handles scheduling, reminders, and patient communication automatically."
             },
             {
-                title: "Revenue Optimization",
-                description: "Integrated billing and insurance claim processing accelerates payments."
+                title: "3x Social Engagement",
+                description: "AI-generated marketing content with GPT-4 creates professional captions and imagery instantly."
             },
             {
-                title: "Data-Driven Decisions",
-                description: "Comprehensive analytics dashboard helps identify trends and optimize resources."
+                title: "Predictive Insights",
+                description: "ML-powered forecasting predicts patient volumes, revenue, and identifies no-show risks."
             }
         ],
         useCases: [
-            "Private medical practices",
-            "Multi-specialty clinics",
-            "Dental offices",
-            "Physical therapy centers",
-            "Mental health practices"
+            "Rehabilitation consultants",
+            "Ayurvedic practitioners",
+            "Physiotherapists",
+            "Sports medicine specialists",
+            "Orthopedic surgeons"
         ],
         techSpecs: [
-            { label: "Deployment", value: "Cloud / On-Premise" },
-            { label: "Compliance", value: "HIPAA Compliant" },
-            { label: "Integrations", value: "HL7, FHIR, REST API" },
-            { label: "Support", value: "24/7 Priority Support" }
+            { label: "AI Engine", value: "GPT-4, Gemini, n8n" },
+            { label: "Communication", value: "Twilio WhatsApp API" },
+            { label: "Database", value: "PostgreSQL with Neon" },
+            { label: "Deployment", value: "Docker, Vercel, Cloud" }
         ],
         uiShowcase: [
             {
-                title: "Intuitive Dashboard",
-                description: "Get a complete overview of your clinic's performance at a glance. Track appointments, patient flow, and revenue metrics in real-time.",
-                highlight: "Real-time metrics and KPIs"
+                title: "Predictive Dashboard",
+                description: "AI-powered dashboard with real-time analytics, patient flow predictions, and revenue forecasting. Tracks appointments, satisfaction scores, and resource optimization.",
+                highlight: "ML-powered predictions"
+            },
+            {
+                title: "AI Content Generator",
+                description: "Sophisticated AI-powered marketing engine using GPT-4 and DALL-E. Generate professional social media captions, hashtags, and promotional images in seconds.",
+                highlight: "GPT-4 & DALL-E powered"
             },
             {
                 title: "Smart Scheduling",
-                description: "AI-powered scheduling that automatically optimizes appointment slots, reduces gaps, and sends intelligent reminders to patients.",
-                highlight: "60% fewer no-shows"
+                description: "AI-driven scheduling with conflict detection, doctor matching, and predictive wait times. Features 30-minute slot management and auto-status transitions.",
+                highlight: "Intelligent optimization"
             },
             {
-                title: "Patient Records",
-                description: "Secure, HIPAA-compliant digital records with instant search, detailed history tracking, and seamless document management.",
-                highlight: "Paperless operations"
-            },
-            {
-                title: "Analytics & Reports",
-                description: "Comprehensive reporting suite with customizable dashboards, trend analysis, and actionable insights for better decision-making.",
-                highlight: "Data-driven decisions"
+                title: "WhatsApp Automation",
+                description: "Integrated Twilio WhatsApp Business API for smart patient communication. AI-generated templates, bulk messaging, dynamic personalization, and delivery tracking.",
+                highlight: "99.5% delivery rate"
             }
         ]
     },
     {
-        slug: "ai-analytics-suite",
-        title: "AI Analytics Suite",
-        subtitle: "Enterprise Intelligence",
-        description: "Real-time insights and predictive modeling for enterprise data with advanced machine learning capabilities.",
-        longDescription: "The AI Analytics Suite transforms raw enterprise data into actionable intelligence. Leveraging cutting-edge machine learning algorithms, it provides real-time dashboards, predictive forecasting, and anomaly detection to help businesses make smarter decisions faster.",
-        gradient: "from-blue-600 via-indigo-600 to-violet-600",
+        slug: "flipka-ai",
+        title: "Flipka AI",
+        subtitle: "Vehicle Intelligence Platform",
+        description: "AI-powered vehicle flipping platform with real-time marketplace analysis and profit predictions.",
+        longDescription: "Flipka AI is a revolutionary SaaS platform that combines real-time Facebook Marketplace data scraping with advanced AI to help car resellers, investors, and buyers make data-driven decisions. Powered by Google Gemini 3 Pro, it identifies undervalued vehicles, predicts market trends, and provides comprehensive analysis in English, Sinhala, and Tamil.",
+        gradient: "from-blue-600 via-blue-500 to-indigo-500",
         shadowColor: "shadow-blue-500/25",
-        badge: "Enterprise",
-        badgeColor: "bg-blue-100 text-blue-700",
-        features: ["Real-time Analytics", "Predictive Models", "Custom Reports", "API Access"],
-        benefits: [
-            {
-                title: "10x Faster Insights",
-                description: "Process millions of data points in seconds with our optimized ML pipeline."
-            },
-            {
-                title: "Predictive Accuracy",
-                description: "Industry-leading forecasting models with up to 95% accuracy on business metrics."
-            },
-            {
-                title: "Self-Service BI",
-                description: "Empower non-technical users to create custom reports and visualizations."
-            },
-            {
-                title: "Seamless Integration",
-                description: "Connect to 100+ data sources including Salesforce, SAP, and databases."
-            }
-        ],
-        useCases: [
-            "Sales forecasting",
-            "Supply chain optimization",
-            "Customer churn prediction",
-            "Financial risk analysis",
-            "Marketing attribution"
-        ],
-        techSpecs: [
-            { label: "Processing", value: "Real-time & Batch" },
-            { label: "Security", value: "SOC 2 Type II" },
-            { label: "Scalability", value: "Unlimited Users" },
-            { label: "Data Sources", value: "100+ Integrations" }
-        ],
-        uiShowcase: [
-            {
-                title: "Live Dashboard",
-                description: "Monitor all your key metrics in real-time with customizable widgets and instant alerts for anomalies.",
-                highlight: "Real-time updates"
-            },
-            {
-                title: "Predictive Models",
-                description: "Build and deploy ML models without code. Our AutoML engine handles feature engineering, training, and optimization.",
-                highlight: "95% forecast accuracy"
-            },
-            {
-                title: "Data Connectors",
-                description: "Connect to 100+ data sources including databases, SaaS apps, and streaming platforms with one-click integrations.",
-                highlight: "Universal connectivity"
-            },
-            {
-                title: "Custom Reports",
-                description: "Create stunning visualizations and scheduled reports that automatically deliver insights to stakeholders.",
-                highlight: "Automated reporting"
-            }
-        ]
-    },
-    {
-        slug: "vision-api",
-        title: "Vision API",
-        subtitle: "Developer Tools",
-        description: "Advanced image recognition and processing API with industry-leading accuracy for seamless developer integration.",
-        longDescription: "Our Vision API provides developers with state-of-the-art computer vision capabilities through a simple REST interface. From object detection and facial recognition to OCR and image classification, power your applications with AI that sees and understands.",
-        gradient: "from-indigo-600 via-purple-600 to-pink-600",
-        shadowColor: "shadow-indigo-500/25",
         badge: "New",
         badgeColor: "bg-green-100 text-green-700",
-        features: ["Object Detection", "Face Recognition", "OCR Processing", "99.9% Uptime SLA"],
+        logo: "/images/Logo/logo.png",
+        features: ["Gemini 3 Pro Analysis", "Flip Rating System", "Price Predictions", "Multi-Language AI"],
         benefits: [
             {
-                title: "Sub-100ms Latency",
-                description: "Lightning-fast inference powered by globally distributed edge servers."
+                title: "Identify Steal Deals",
+                description: "AI-powered Flip Rating (1-10) instantly identifies vehicles 15%+ below market value."
             },
             {
-                title: "99.2% Accuracy",
-                description: "Best-in-class accuracy across all major computer vision benchmarks."
+                title: "Predict Future Value",
+                description: "ML-based price predictions for 2025-2027 with market trend indicators (Stable/Appreciating/Depreciating)."
             },
             {
-                title: "Easy Integration",
-                description: "Simple REST API with SDKs for Python, Node.js, Go, and more."
+                title: "Multi-Language Support",
+                description: "Complete analysis in English, Sinhala (සිංහල), and Tamil (தமிழ்) for the Sri Lankan market."
             },
             {
-                title: "Pay-Per-Use",
-                description: "Only pay for what you use with transparent, predictable pricing."
+                title: "Smart Price Detection",
+                description: "AI corrects Lakhs notation, fake USD listings, and identifies hand price/lease transfer deals."
             }
         ],
         useCases: [
-            "Identity verification",
-            "Document processing",
-            "Content moderation",
-            "Retail analytics",
-            "Medical imaging"
+            "Car resellers & flippers",
+            "First-time vehicle buyers",
+            "Automotive investors",
+            "Uber/PickMe drivers",
+            "Finance professionals"
         ],
         techSpecs: [
-            { label: "Latency", value: "<100ms average" },
-            { label: "Formats", value: "JPEG, PNG, WebP, PDF" },
-            { label: "Rate Limit", value: "10,000 req/min" },
-            { label: "SDKs", value: "Python, Node, Go, Java" }
+            { label: "AI Engine", value: "Gemini 3 Pro Preview" },
+            { label: "Data Source", value: "Apify FB Marketplace" },
+            { label: "Languages", value: "EN, SI, TA" },
+            { label: "Payments", value: "Dodo Payments" }
         ],
         uiShowcase: [
             {
-                title: "API Console",
-                description: "Test and explore all Vision API endpoints directly in your browser with our interactive playground.",
-                highlight: "Try before you code"
+                title: "AI Market Scanner",
+                description: "Real-time Facebook Marketplace scraping across all 9 Sri Lankan provinces. Filter by vehicle type, price range, and listing freshness with Apify integration.",
+                highlight: "500+ listings per scan"
             },
             {
-                title: "Object Detection",
-                description: "Identify and locate objects in images with bounding boxes, confidence scores, and hierarchical labels.",
-                highlight: "99.2% accuracy"
+                title: "Flip Rating Dashboard",
+                description: "Proprietary 1-10 scoring system evaluates every vehicle. Considers market averages, depreciation curves, location pricing, and economic indicators.",
+                highlight: "Instant profit potential"
             },
             {
-                title: "Face Analysis",
-                description: "Detect faces with landmarks, emotions, age estimation, and similarity matching for identity verification.",
-                highlight: "Enterprise-grade"
+                title: "Price Prediction Engine",
+                description: "Historical price tracking (2018-2024) combined with ML projections (2025-2027). Includes economic crisis impact analysis and market trend indicators.",
+                highlight: "3-year forecasts"
             },
             {
-                title: "OCR Engine",
-                description: "Extract text from images and documents with support for 100+ languages and handwriting recognition.",
-                highlight: "Multi-language OCR"
+                title: "AI Buying Guide",
+                description: "Comprehensive guides generated for every vehicle: red flags, investment potential, negotiation strategies, document checklists, and model-specific repair cost estimates.",
+                highlight: "Expert-level insights"
             }
         ]
     },
+
     {
         slug: "content-engine",
         title: "Content Engine",
@@ -234,6 +173,7 @@ export const products: Product[] = [
         shadowColor: "shadow-pink-500/25",
         badge: "AI Powered",
         badgeColor: "bg-purple-100 text-purple-700",
+        logo: "/images/Logo/content-engine-logo.png",
         features: ["Blog Generation", "Social Media Posts", "Email Campaigns", "Multi-language"],
         benefits: [
             {

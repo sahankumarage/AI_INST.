@@ -10,17 +10,48 @@ import {
     MessageSquare,
     ArrowRight,
     Play,
-    CircleDot
+    CircleDot,
+    Headphones,
+    Search,
+    Mail
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
-const agentTypes = [
-    { name: "Customer Support", color: "from-emerald-400 to-teal-500" },
-    { name: "Data Research", color: "from-blue-400 to-indigo-500" },
-    { name: "Content Creation", color: "from-violet-400 to-purple-500" },
-    { name: "Sales Outreach", color: "from-orange-400 to-rose-500" },
-    { name: "Process Automation", color: "from-cyan-400 to-blue-500" },
-    { name: "Custom Solutions", color: "from-pink-400 to-violet-500" },
+const popularAgents = [
+    {
+        name: "Nova",
+        techName: "NLP-CustomerCare-v3",
+        role: "Customer Support Agent",
+        greeting: "Hi there! 👋 I'll handle all your customer inquiries 24/7. No question is too complex for me!",
+        image: "/images/agents/nova.png",
+        gradient: "from-violet-500 to-purple-600",
+        bgGradient: "from-violet-500/10 to-purple-600/10",
+        icon: Headphones,
+        stats: { responses: "5K+", satisfaction: "98%" }
+    },
+    {
+        name: "Aria",
+        techName: "RAG-Research-v2",
+        role: "Research & Analysis Agent",
+        greeting: "Hello! 👋 I'll research anything you need. Market trends, competitors, data insights — I've got you covered!",
+        image: "/images/agents/aria.png",
+        gradient: "from-emerald-500 to-teal-600",
+        bgGradient: "from-emerald-500/10 to-teal-600/10",
+        icon: Search,
+        stats: { reports: "1K+", accuracy: "99.2%" }
+    },
+    {
+        name: "Max",
+        techName: "GPT-Outreach-v4",
+        role: "Sales & Outreach Agent",
+        greeting: "Hey! 👋 I'll manage your email campaigns and follow-ups. Let me turn prospects into customers!",
+        image: "/images/agents/max.png",
+        gradient: "from-orange-500 to-rose-500",
+        bgGradient: "from-orange-500/10 to-rose-600/10",
+        icon: Mail,
+        stats: { emails: "10K+", conversion: "3.2x" }
+    }
 ];
 
 const capabilities = [
@@ -206,7 +237,7 @@ export default function AgentsPage() {
                 </div>
             </section>
 
-            {/* Agent Types - Horizontal Scroll */}
+            {/* Meet Our Popular Agents Section */}
             <section className="py-24 md:py-32 px-6 bg-gradient-to-b from-black via-slate-950 to-black">
                 <div className="max-w-6xl mx-auto">
                     <motion.div
@@ -214,33 +245,92 @@ export default function AgentsPage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.6 }}
-                        className="mb-12"
+                        className="text-center mb-16"
                     >
                         <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                            Agents for Every Need
+                            Meet Our <span className="text-violet-400">Popular Agents</span>
                         </h2>
                         <p className="text-xl text-slate-400">
-                            From customer-facing to back-office operations.
+                            Ready to work for you, 24/7.
                         </p>
                     </motion.div>
 
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        className="flex flex-wrap gap-4"
-                    >
-                        {agentTypes.map((agent, index) => (
-                            <motion.div
-                                key={index}
-                                whileHover={{ scale: 1.05, y: -5 }}
-                                className={`px-6 py-4 rounded-2xl bg-gradient-to-r ${agent.color} text-white font-semibold text-lg cursor-pointer shadow-lg transition-all duration-300`}
-                            >
-                                {agent.name}
-                            </motion.div>
-                        ))}
-                    </motion.div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {popularAgents.map((agent, index) => {
+                            const IconComponent = agent.icon;
+                            return (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, y: 40 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.6, delay: index * 0.15 }}
+                                    className="group"
+                                >
+                                    <div className={`relative rounded-3xl overflow-hidden bg-gradient-to-br ${agent.bgGradient} border border-slate-700/50 hover:border-slate-600 transition-all duration-500`}>
+                                        {/* Agent Image */}
+                                        <div className="relative h-56 overflow-hidden">
+                                            <motion.div
+                                                animate={{ scale: [1, 1.02, 1] }}
+                                                transition={{ repeat: Infinity, duration: 3, ease: "easeInOut", delay: index * 0.3 }}
+                                                className="relative w-full h-full"
+                                            >
+                                                <Image
+                                                    src={agent.image}
+                                                    alt={agent.name}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                            </motion.div>
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="p-6">
+                                            {/* Tech Name Badge */}
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${agent.gradient} flex items-center justify-center`}>
+                                                    <IconComponent className="w-4 h-4 text-white" />
+                                                </div>
+                                                <span className="text-xs font-mono text-slate-500 bg-slate-800/80 px-2 py-1 rounded">
+                                                    {agent.techName}
+                                                </span>
+                                            </div>
+
+                                            {/* Name & Role */}
+                                            <h3 className="text-2xl font-bold text-white mb-1">
+                                                {agent.name}
+                                            </h3>
+                                            <p className={`text-sm font-medium bg-gradient-to-r ${agent.gradient} bg-clip-text text-transparent mb-4`}>
+                                                {agent.role}
+                                            </p>
+
+                                            {/* Speech Bubble */}
+                                            <div className="relative bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50">
+                                                <div className="absolute -top-2 left-6 w-4 h-4 bg-slate-800/80 border-l border-t border-slate-700/50 rotate-45" />
+                                                <p className="text-slate-300 text-sm leading-relaxed relative z-10">
+                                                    "{agent.greeting}"
+                                                </p>
+                                            </div>
+
+                                            {/* Stats */}
+                                            <div className="flex gap-4 mt-4 pt-4 border-t border-slate-700/50">
+                                                {Object.entries(agent.stats).map(([key, value], i) => (
+                                                    <div key={i} className="text-center flex-1">
+                                                        <div className={`text-lg font-bold bg-gradient-to-r ${agent.gradient} bg-clip-text text-transparent`}>
+                                                            {value}
+                                                        </div>
+                                                        <div className="text-xs text-slate-500 capitalize">
+                                                            {key}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
                 </div>
             </section>
 
@@ -277,22 +367,154 @@ export default function AgentsPage() {
                 </div>
             </section>
 
-            {/* Big Statement */}
+            {/* Big Statement - Animated */}
             <section className="py-32 md:py-40 px-6 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-900/20 via-purple-900/20 to-pink-900/20" />
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-[150px]" />
 
+                {/* Animated floating particles */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8 }}
-                    className="max-w-5xl mx-auto text-center relative z-10"
-                >
-                    <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
-                        Imagine a team that <span className="text-violet-400">never sleeps</span>, <span className="text-purple-400">never complains</span>, and <span className="text-pink-400">scales infinitely</span>.
-                    </h2>
-                </motion.div>
+                    animate={{ y: [-20, 20, -20], x: [-10, 10, -10], opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+                    className="absolute top-1/4 left-1/4 w-3 h-3 rounded-full bg-violet-400"
+                />
+                <motion.div
+                    animate={{ y: [20, -20, 20], x: [10, -10, 10], opacity: [0.4, 0.7, 0.4] }}
+                    transition={{ repeat: Infinity, duration: 6, ease: "easeInOut", delay: 1 }}
+                    className="absolute top-1/3 right-1/4 w-2 h-2 rounded-full bg-purple-400"
+                />
+                <motion.div
+                    animate={{ y: [-15, 25, -15], x: [-15, 5, -15], opacity: [0.3, 0.5, 0.3] }}
+                    transition={{ repeat: Infinity, duration: 7, ease: "easeInOut", delay: 2 }}
+                    className="absolute bottom-1/3 left-1/3 w-2 h-2 rounded-full bg-pink-400"
+                />
+
+                <div className="max-w-5xl mx-auto text-center relative z-10">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
+                            {/* "Imagine a team that" */}
+                            <motion.span
+                                initial={{ opacity: 0, y: 30 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.6, delay: 0 }}
+                                className="inline-block"
+                            >
+                                Imagine a team that{" "}
+                            </motion.span>
+
+                            {/* "never sleeps" with glow animation */}
+                            <motion.span
+                                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.6, delay: 0.4 }}
+                                className="relative inline-block"
+                            >
+                                <motion.span
+                                    animate={{
+                                        textShadow: [
+                                            "0 0 20px rgba(139, 92, 246, 0)",
+                                            "0 0 40px rgba(139, 92, 246, 0.8)",
+                                            "0 0 20px rgba(139, 92, 246, 0)"
+                                        ]
+                                    }}
+                                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                                    className="text-violet-400"
+                                >
+                                    never sleeps
+                                </motion.span>
+                            </motion.span>
+
+                            <motion.span
+                                initial={{ opacity: 0 }}
+                                whileInView={{ opacity: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.3, delay: 0.8 }}
+                            >
+                                ,{" "}
+                            </motion.span>
+
+                            {/* "never complains" with glow animation */}
+                            <motion.span
+                                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.6, delay: 1.0 }}
+                                className="relative inline-block"
+                            >
+                                <motion.span
+                                    animate={{
+                                        textShadow: [
+                                            "0 0 20px rgba(168, 85, 247, 0)",
+                                            "0 0 40px rgba(168, 85, 247, 0.8)",
+                                            "0 0 20px rgba(168, 85, 247, 0)"
+                                        ]
+                                    }}
+                                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut", delay: 0.7 }}
+                                    className="text-purple-400"
+                                >
+                                    never complains
+                                </motion.span>
+                            </motion.span>
+
+                            <motion.span
+                                initial={{ opacity: 0 }}
+                                whileInView={{ opacity: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.3, delay: 1.4 }}
+                            >
+                                , and{" "}
+                            </motion.span>
+
+                            {/* "scales infinitely" with glow animation */}
+                            <motion.span
+                                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.6, delay: 1.6 }}
+                                className="relative inline-block"
+                            >
+                                <motion.span
+                                    animate={{
+                                        textShadow: [
+                                            "0 0 20px rgba(236, 72, 153, 0)",
+                                            "0 0 40px rgba(236, 72, 153, 0.8)",
+                                            "0 0 20px rgba(236, 72, 153, 0)"
+                                        ]
+                                    }}
+                                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut", delay: 1.4 }}
+                                    className="text-pink-400"
+                                >
+                                    scales infinitely
+                                </motion.span>
+                            </motion.span>
+
+                            <motion.span
+                                initial={{ opacity: 0 }}
+                                whileInView={{ opacity: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.3, delay: 2.0 }}
+                            >
+                                .
+                            </motion.span>
+                        </h2>
+                    </motion.div>
+
+                    {/* Animated underline */}
+                    <motion.div
+                        initial={{ scaleX: 0 }}
+                        whileInView={{ scaleX: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 1, delay: 2.2, ease: "easeOut" }}
+                        className="mt-12 h-1 w-48 mx-auto bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 rounded-full origin-center"
+                    />
+                </div>
             </section>
 
             {/* CTA Section */}
@@ -326,6 +548,6 @@ export default function AgentsPage() {
                     </motion.div>
                 </div>
             </section>
-        </main>
+        </main >
     );
 }

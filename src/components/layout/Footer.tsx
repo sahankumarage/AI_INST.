@@ -14,7 +14,7 @@ const footerLinks = {
         { name: "Products", href: "/products" },
         { name: "AI Agents", href: "/agents" },
         { name: "Consulting", href: "/consulting" },
-        { name: "Education", href: "/courses" },
+        { name: "Academy", href: "/courses" },
     ],
     legal: [
         { name: "Privacy Policy", href: "/privacy" },

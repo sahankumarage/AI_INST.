@@ -1,8 +1,8 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Float, PerspectiveCamera, Environment, ContactShadows, MeshTransmissionMaterial } from "@react-three/drei";
-import { useRef } from "react";
+import { Float, PerspectiveCamera, ContactShadows, MeshTransmissionMaterial } from "@react-three/drei";
+import { useRef, Suspense } from "react";
 import * as THREE from "three";
 
 function GeometricShape(props: any) {
@@ -57,7 +57,7 @@ export function HeroModel() {
                     <GeometricShape position={[3, 0, 0]} />
                 </Float>
 
-                <Environment preset="city" />
+
                 <ContactShadows position={[0, -3.5, 0]} opacity={0.4} scale={20} blur={2} color="#0284c7" />
             </Canvas>
         </div>

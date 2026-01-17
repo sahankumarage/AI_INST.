@@ -27,7 +27,7 @@ export default function Home() {
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6 text-slate-900">
-            Empowering Vision with <br />
+            Vision to Reality with <br />
             <span className="text-gradient">Artificial Intelligence</span>
           </h1>
 
@@ -67,10 +67,7 @@ export default function Home() {
 
       {/* Team Video Section */}
       <VideoSection
-      // Add your video URL here:
-      // videoUrl="https://www.youtube.com/watch?v=YOUR_VIDEO_ID"
-      // or local: videoUrl="/videos/team-intro.mp4"
-      // posterImage="/images/video-thumbnail.jpg"
+        videoUrl="/Video/AI_Vision_to_Reality_Video.mp4"
       />
 
       {/* Ecosystem Section */}

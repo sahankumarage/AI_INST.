@@ -15,7 +15,8 @@ import {
     Building2,
     GraduationCap,
     Briefcase,
-    Bot
+    Bot,
+    Globe
 } from "lucide-react";
 import Link from "next/link";
 
@@ -23,22 +24,22 @@ const contactInfo = [
     {
         icon: Mail,
         title: "Email Us",
-        value: "hello@ai-inst.com",
+        value: "hello@aiinst.io",
         description: "We'll respond within 24 hours",
         gradient: "from-blue-500 to-cyan-500"
     },
     {
         icon: Phone,
         title: "Call Us",
-        value: "+1 (555) 123-4567",
+        value: "+94 71 744 2222",
         description: "Mon-Fri, 9AM-6PM EST",
         gradient: "from-green-500 to-emerald-500"
     },
     {
-        icon: MapPin,
-        title: "Visit Us",
-        value: "123 AI Boulevard",
-        description: "San Francisco, CA 94105",
+        icon: Globe,
+        title: "We're Global",
+        value: "Work Remotely",
+        description: "Serving clients worldwide",
         gradient: "from-violet-500 to-purple-500"
     },
     {
@@ -51,10 +52,10 @@ const contactInfo = [
 ];
 
 const inquiryTypes = [
-    { id: "education", icon: GraduationCap, label: "Course Enrollment", description: "Learn about our AI courses" },
     { id: "consulting", icon: Briefcase, label: "Consulting", description: "Strategic AI integration" },
     { id: "product", icon: Building2, label: "Product Demo", description: "See our products in action" },
     { id: "agents", icon: Bot, label: "AI Agents", description: "Intelligent automation solutions" },
+    { id: "education", icon: GraduationCap, label: "Course Enrollment", description: "Learn about our AI courses" },
 ];
 
 const faqs = [
@@ -349,7 +350,7 @@ export default function ContactPage() {
                 </div>
             </section>
 
-            {/* Map Section (Placeholder) */}
+            {/* Global Reach Section */}
             <section className="py-20 px-6 bg-slate-50">
                 <div className="max-w-6xl mx-auto">
                     <motion.div
@@ -359,10 +360,10 @@ export default function ContactPage() {
                         className="text-center mb-12"
                     >
                         <span className="text-primary font-medium tracking-wider text-sm uppercase mb-3 block">
-                            Our Location
+                            Worldwide
                         </span>
                         <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
-                            Visit Our Office
+                            Connect With Us Anywhere
                         </h2>
                     </motion.div>
 
@@ -370,20 +371,30 @@ export default function ContactPage() {
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="relative rounded-3xl overflow-hidden shadow-2xl h-[400px] bg-slate-200"
+                        className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 p-12"
                     >
-                        {/* Map Placeholder - Replace with actual map embed */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 flex items-center justify-center">
-                            <div className="text-center">
-                                <MapPin className="w-16 h-16 text-primary mx-auto mb-4" />
-                                <p className="text-white text-xl font-semibold">123 AI Boulevard</p>
-                                <p className="text-slate-400">San Francisco, CA 94105</p>
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    className="mt-6 px-6 py-3 bg-white text-slate-900 rounded-full font-semibold shadow-lg"
-                                >
-                                    Get Directions
-                                </motion.button>
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/10 rounded-full blur-3xl" />
+
+                        <div className="relative z-10 text-center">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-6">
+                                <Globe className="w-10 h-10 text-white" />
+                            </div>
+                            <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                                We Work Remotely, Globally
+                            </h3>
+                            <p className="text-slate-300 text-lg max-w-2xl mx-auto mb-8">
+                                As a modern startup, we're not confined by geography. We serve clients across
+                                multiple countries and time zones, delivering AI solutions wherever you are.
+                            </p>
+
+                            {/* Countries/Regions */}
+                            <div className="flex flex-wrap justify-center gap-3">
+                                {["🇱🇰 Sri Lanka", "🇦🇪 UAE", "🇪🇺 Europe", "🇬🇧 UK", "🇯🇵 Japan", "🇺🇸 USA"].map((country, i) => (
+                                    <span key={i} className="px-4 py-2 bg-white/10 rounded-full text-white text-sm font-medium">
+                                        {country}
+                                    </span>
+                                ))}
                             </div>
                         </div>
 

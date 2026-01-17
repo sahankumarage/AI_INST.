@@ -19,16 +19,17 @@ import {
     Twitter,
     Mail,
     CheckCircle2,
-    Sparkles
+    Sparkles,
+    Zap
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 const stats = [
-    { value: "50+", label: "AI Projects", icon: Code2 },
-    { value: "15+", label: "Enterprise Clients", icon: Briefcase },
+    { value: "10+", label: "AI Projects", icon: Code2 },
+    { value: "5+", label: "Happy Clients", icon: Briefcase },
     { value: "3+", label: "Countries", icon: Globe },
-    { value: "500+", label: "Students Trained", icon: GraduationCap },
+    { value: "50+", label: "Students Trained", icon: GraduationCap },
 ];
 
 const values = [
@@ -65,43 +66,38 @@ const services = [
     { icon: GraduationCap, title: "AI Education", description: "Comprehensive courses from fundamentals to advanced specializations" },
 ];
 
-const team = [
+const whyChooseUs = [
     {
-        name: "Alex Chen",
-        role: "Founder & CEO",
-        bio: "Former Google AI researcher with 10+ years in machine learning",
-        image: "/team/alex.jpg",
-        gradient: "from-primary to-secondary"
+        icon: Rocket,
+        title: "Cutting-Edge Technology",
+        description: "We use the latest AI models including GPT-4, Gemini, and custom-trained solutions to deliver state-of-the-art results.",
+        gradient: "from-violet-500 to-purple-600"
     },
     {
-        name: "Sarah Johnson",
-        role: "Head of Education",
-        bio: "PhD in Computer Science, passionate about making AI accessible",
-        image: "/team/sarah.jpg",
-        gradient: "from-secondary to-accent"
+        icon: Zap,
+        title: "Fast Delivery",
+        description: "From concept to deployment in weeks, not months. Our agile approach ensures rapid development without compromising quality.",
+        gradient: "from-amber-500 to-orange-500"
     },
     {
-        name: "Michael Park",
-        role: "Lead AI Engineer",
-        bio: "Specialized in NLP and generative AI systems",
-        image: "/team/michael.jpg",
-        gradient: "from-accent to-primary"
+        icon: Heart,
+        title: "Full Support",
+        description: "We don't just build and leave. Our team provides ongoing support, training, and optimization for your AI solutions.",
+        gradient: "from-pink-500 to-rose-500"
     },
     {
-        name: "Emma Williams",
-        role: "Head of Consulting",
-        bio: "15+ years enterprise experience, MBA from Stanford",
-        image: "/team/emma.jpg",
-        gradient: "from-violet-500 to-pink-500"
+        icon: CheckCircle2,
+        title: "Affordable Pricing",
+        description: "Enterprise-grade AI solutions at startup-friendly prices. We believe powerful AI should be accessible to all businesses.",
+        gradient: "from-emerald-500 to-teal-500"
     },
 ];
 
 const timeline = [
-    { year: "2021", title: "Foundation", description: "AI_INST. was founded with a vision to democratize AI education" },
-    { year: "2022", title: "First Courses", description: "Launched our comprehensive AI curriculum, training 200+ students" },
-    { year: "2023", title: "Enterprise Expansion", description: "Began consulting services for businesses across 3 countries" },
-    { year: "2024", title: "Product Launch", description: "Released our suite of AI-powered software products" },
-    { year: "2025", title: "AI Agents", description: "Introduced intelligent automation agents for enterprise clients" },
+    { year: "Q1 2025", title: "Founded", description: "AI_INST. was born with a vision to make AI accessible to everyone" },
+    { year: "Q2 2025", title: "First Products", description: "Launched our first AI-powered software products and agents" },
+    { year: "Q3 2025", title: "Growing Community", description: "Building partnerships and training our first batch of students" },
+    { year: "Now", title: "Looking Ahead", description: "Expanding our offerings and reaching more businesses worldwide" },
 ];
 
 export default function AboutPage() {
@@ -359,70 +355,107 @@ export default function AboutPage() {
                 </div>
             </section>
 
-            {/* Team Section */}
+            {/* Our Story Section - Simple Description with Art */}
             <section className="py-20 px-6">
                 <div className="max-w-6xl mx-auto">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="text-center mb-16"
-                    >
-                        <span className="text-primary font-medium tracking-wider text-sm uppercase mb-3 block">
-                            The Experts
-                        </span>
-                        <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4">
-                            Meet Our Team
-                        </h2>
-                        <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-                            A diverse group of researchers, engineers, and educators united by a passion for AI innovation.
-                        </p>
-                    </motion.div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                        {/* Art/Illustration Side */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6 }}
+                            className="relative"
+                        >
+                            {/* Abstract Art Container */}
+                            <div className="relative aspect-square max-w-md mx-auto">
+                                {/* Background Gradient Circles */}
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-72 h-72 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 blur-2xl" />
+                                </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {team.map((member, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
-                                className="group"
-                            >
-                                <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-lg shadow-slate-200/50 hover:shadow-xl transition-all">
-                                    {/* Avatar Placeholder */}
-                                    <div className={`h-48 bg-gradient-to-br ${member.gradient} relative overflow-hidden`}>
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                                                <Users className="w-12 h-12 text-white/80" />
-                                            </div>
-                                        </div>
-                                        {/* Decorative Circles */}
-                                        <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10" />
-                                        <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-white/10" />
-                                    </div>
+                                {/* Floating Elements */}
+                                <motion.div
+                                    animate={{ y: [-10, 10, -10], rotate: [0, 5, 0] }}
+                                    transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+                                    className="absolute top-1/4 left-1/4 w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-secondary shadow-xl shadow-primary/30 flex items-center justify-center"
+                                >
+                                    <Sparkles className="w-10 h-10 text-white" />
+                                </motion.div>
 
-                                    <div className="p-6">
-                                        <h3 className="text-xl font-bold text-slate-900">{member.name}</h3>
-                                        <p className="text-primary font-medium text-sm mb-3">{member.role}</p>
-                                        <p className="text-slate-600 text-sm leading-relaxed mb-4">{member.bio}</p>
+                                <motion.div
+                                    animate={{ y: [10, -10, 10], rotate: [0, -5, 0] }}
+                                    transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", delay: 1 }}
+                                    className="absolute top-1/3 right-1/4 w-20 h-20 rounded-2xl bg-gradient-to-br from-secondary to-accent shadow-xl shadow-secondary/30 flex items-center justify-center"
+                                >
+                                    <Bot className="w-8 h-8 text-white" />
+                                </motion.div>
 
-                                        {/* Social Links */}
-                                        <div className="flex gap-2">
-                                            <button className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
-                                                <Linkedin className="w-4 h-4" />
-                                            </button>
-                                            <button className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
-                                                <Twitter className="w-4 h-4" />
-                                            </button>
-                                            <button className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
-                                                <Mail className="w-4 h-4" />
-                                            </button>
+                                <motion.div
+                                    animate={{ y: [-8, 12, -8], rotate: [0, 3, 0] }}
+                                    transition={{ repeat: Infinity, duration: 7, ease: "easeInOut", delay: 2 }}
+                                    className="absolute bottom-1/4 left-1/3 w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-primary shadow-xl shadow-accent/30 flex items-center justify-center"
+                                >
+                                    <Code2 className="w-7 h-7 text-white" />
+                                </motion.div>
+
+                                {/* Central Element */}
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-32 h-32 rounded-3xl bg-white shadow-2xl flex items-center justify-center border border-slate-100">
+                                        <div className="text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                                            AI
                                         </div>
                                     </div>
                                 </div>
-                            </motion.div>
-                        ))}
+                            </div>
+                        </motion.div>
+
+                        {/* Description Side */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <span className="text-primary font-medium tracking-wider text-sm uppercase mb-3 block">
+                                Our Promise
+                            </span>
+                            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">
+                                Building the Future, Together
+                            </h2>
+                            <div className="space-y-4 text-lg text-slate-600 leading-relaxed">
+                                <p>
+                                    We're a young startup with big dreams. Founded in 2025, AI_INST. was born from a simple belief:
+                                    <span className="text-slate-900 font-medium"> AI should be accessible to everyone</span>,
+                                    not just tech giants.
+                                </p>
+                                <p>
+                                    Our team combines cutting-edge AI expertise with a genuine passion for helping businesses
+                                    transform. From intelligent automation to custom AI solutions, we're here to turn your
+                                    ideas into reality.
+                                </p>
+                                <p>
+                                    We may be new, but we're driven by innovation, committed to excellence, and excited to
+                                    grow alongside our clients. <span className="text-primary font-medium">Your success is our success.</span>
+                                </p>
+                            </div>
+
+                            {/* Simple Stats */}
+                            <div className="flex gap-8 mt-8 pt-8 border-t border-slate-200">
+                                <div>
+                                    <div className="text-3xl font-bold text-primary">2025</div>
+                                    <div className="text-sm text-slate-500">Founded</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-bold text-secondary">100%</div>
+                                    <div className="text-sm text-slate-500">Passion</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-bold text-accent">∞</div>
+                                    <div className="text-sm text-slate-500">Possibilities</div>
+                                </div>
+                            </div>
+                        </motion.div>
                     </div>
                 </div>
             </section>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Volume2, VolumeX, Maximize, Users } from "lucide-react";
 
@@ -16,7 +16,64 @@ export function VideoSection({
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [showControls, setShowControls] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [currentTime, setCurrentTime] = useState(0);
     const videoRef = useRef<HTMLVideoElement>(null);
+    const progressRef = useRef<HTMLDivElement>(null);
+
+    // Update progress as video plays
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const handleTimeUpdate = () => {
+            setCurrentTime(video.currentTime);
+            setProgress((video.currentTime / video.duration) * 100);
+        };
+
+        const handleLoadedMetadata = () => {
+            setDuration(video.duration);
+        };
+
+        const handleEnded = () => {
+            setIsPlaying(false);
+            setProgress(0);
+            setCurrentTime(0);
+        };
+
+        video.addEventListener('timeupdate', handleTimeUpdate);
+        video.addEventListener('loadedmetadata', handleLoadedMetadata);
+        video.addEventListener('ended', handleEnded);
+
+        return () => {
+            video.removeEventListener('timeupdate', handleTimeUpdate);
+            video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            video.removeEventListener('ended', handleEnded);
+        };
+    }, []);
+
+    // Format time in MM:SS
+    const formatTime = (time: number) => {
+        if (isNaN(time)) return "0:00";
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    // Handle seeking when clicking on progress bar
+    const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!videoRef.current || !progressRef.current) return;
+
+        const rect = progressRef.current.getBoundingClientRect();
+        const clickPosition = e.clientX - rect.left;
+        const percentage = clickPosition / rect.width;
+        const newTime = percentage * videoRef.current.duration;
+
+        videoRef.current.currentTime = newTime;
+        setCurrentTime(newTime);
+        setProgress(percentage * 100);
+    };
 
     const handlePlayPause = () => {
         if (videoRef.current) {
@@ -37,6 +94,14 @@ export function VideoSection({
             videoRef.current.muted = !isMuted;
         }
         setIsMuted(!isMuted);
+    };
+
+    const handleFullscreen = () => {
+        if (videoRef.current) {
+            if (videoRef.current.requestFullscreen) {
+                videoRef.current.requestFullscreen();
+            }
+        }
     };
 
     // Check if it's a YouTube URL
@@ -212,9 +277,30 @@ export function VideoSection({
                                                 )}
                                             </button>
 
-                                            <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
-                                                <div className="h-full w-1/3 bg-gradient-to-r from-primary to-secondary rounded-full" />
+                                            {/* Time Display */}
+                                            <span className="text-white/80 text-sm min-w-[45px]">
+                                                {formatTime(currentTime)}
+                                            </span>
+
+                                            {/* Progress Bar - Now Clickable */}
+                                            <div
+                                                ref={progressRef}
+                                                onClick={handleSeek}
+                                                className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden cursor-pointer group"
+                                            >
+                                                <div
+                                                    className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-100 relative"
+                                                    style={{ width: `${progress}%` }}
+                                                >
+                                                    {/* Seek Handle */}
+                                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg" />
+                                                </div>
                                             </div>
+
+                                            {/* Duration Display */}
+                                            <span className="text-white/80 text-sm min-w-[45px]">
+                                                {formatTime(duration)}
+                                            </span>
 
                                             <button
                                                 onClick={handleMuteToggle}
@@ -227,7 +313,10 @@ export function VideoSection({
                                                 )}
                                             </button>
 
-                                            <button className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
+                                            <button
+                                                onClick={handleFullscreen}
+                                                className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                                            >
                                                 <Maximize className="w-5 h-5 text-white" />
                                             </button>
                                         </div>
