@@ -427,13 +427,15 @@ export default function CourseDetail() {
                                     </div>
                                 </div>
 
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    className={`w-full py-4 bg-gradient-to-r ${course.gradient} text-white rounded-xl font-bold text-lg shadow-lg mb-4`}
-                                >
-                                    Enroll Now
-                                </motion.button>
+                                <Link href={`/student-register?course=${slug}`}>
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className={`w-full py-4 bg-gradient-to-r ${course.gradient} text-white rounded-xl font-bold text-lg shadow-lg mb-4`}
+                                    >
+                                        Enroll Now
+                                    </motion.button>
+                                </Link>
 
 
 
@@ -623,13 +625,15 @@ export default function CourseDetail() {
                             Join {course.students} students who have already transformed their careers with this course.
                         </p>
                         <div className="flex flex-wrap justify-center gap-4">
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="px-8 py-4 bg-white text-slate-900 rounded-full font-semibold shadow-xl hover:bg-slate-50 transition-colors flex items-center gap-2"
-                            >
-                                Enroll Now <ArrowRight className="w-5 h-5" />
-                            </motion.button>
+                            <Link href={`/student-register?course=${slug}`}>
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    className="px-8 py-4 bg-white text-slate-900 rounded-full font-semibold shadow-xl hover:bg-slate-50 transition-colors flex items-center gap-2"
+                                >
+                                    Enroll Now <ArrowRight className="w-5 h-5" />
+                                </motion.button>
+                            </Link>
                             <Link href="/contact">
                                 <motion.button
                                     whileHover={{ scale: 1.02 }}
