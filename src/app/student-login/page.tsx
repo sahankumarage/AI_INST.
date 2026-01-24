@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, ArrowRight, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-export default function StudentLoginPage() {
+function StudentLoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirectUrl = searchParams.get('redirect');
@@ -187,5 +187,17 @@ export default function StudentLoginPage() {
                 </div>
             </motion.div>
         </main>
+    );
+}
+
+export default function StudentLoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            </div>
+        }>
+            <StudentLoginContent />
+        </Suspense>
     );
 }

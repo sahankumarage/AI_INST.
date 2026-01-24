@@ -5,11 +5,12 @@ import Course from '@/models/Course';
 // GET - Fetch single course by slug
 export async function GET(
     req: Request,
-    { params }: { params: { slug: string } }
+    { params }: { params: Promise<{ slug: string }> }
 ) {
     try {
         await dbConnect();
-        const course = await Course.findOne({ slug: params.slug });
+        const resolvedParams = await params;
+        const course = await Course.findOne({ slug: resolvedParams.slug });
 
         if (!course) {
             return NextResponse.json(
@@ -31,8 +32,9 @@ export async function GET(
 // PUT - Update course by slug
 export async function PUT(
     req: Request,
-    { params }: { params: { slug: string } }
+    { params }: { params: Promise<{ slug: string }> }
 ) {
+    const resolvedParams = await params;
     try {
         await dbConnect();
 
@@ -52,7 +54,7 @@ export async function PUT(
         }
 
         const course = await Course.findOneAndUpdate(
-            { slug: params.slug },
+            { slug: resolvedParams.slug },
             { $set: body },
             { new: true, runValidators: true }
         );
@@ -80,12 +82,13 @@ export async function PUT(
 // DELETE - Delete course by slug
 export async function DELETE(
     req: Request,
-    { params }: { params: { slug: string } }
+    { params }: { params: Promise<{ slug: string }> }
 ) {
+    const resolvedParams = await params;
     try {
         await dbConnect();
 
-        const course = await Course.findOneAndDelete({ slug: params.slug });
+        const course = await Course.findOneAndDelete({ slug: resolvedParams.slug });
 
         if (!course) {
             return NextResponse.json(

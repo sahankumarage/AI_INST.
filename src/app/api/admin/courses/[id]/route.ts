@@ -5,11 +5,12 @@ import Course from '@/models/Course';
 // GET - Fetch single course by ID
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         await dbConnect();
-        const course = await Course.findById(params.id);
+        const resolvedParams = await params;
+        const course = await Course.findById(resolvedParams.id);
 
         if (!course) {
             return NextResponse.json(
@@ -31,8 +32,9 @@ export async function GET(
 // PUT - Update course
 export async function PUT(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const resolvedParams = await params;
     try {
         await dbConnect();
 
@@ -44,7 +46,7 @@ export async function PUT(
         delete body.createdAt;
 
         const course = await Course.findByIdAndUpdate(
-            params.id,
+            resolvedParams.id,
             { $set: body },
             { new: true, runValidators: true }
         );
@@ -72,12 +74,13 @@ export async function PUT(
 // DELETE - Delete course
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const resolvedParams = await params;
     try {
         await dbConnect();
 
-        const course = await Course.findByIdAndDelete(params.id);
+        const course = await Course.findByIdAndDelete(resolvedParams.id);
 
         if (!course) {
             return NextResponse.json(
