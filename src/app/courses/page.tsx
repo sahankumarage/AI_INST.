@@ -177,6 +177,74 @@ export default function CoursesPage() {
                     </motion.div>
                 )}
 
+                {/* LMS Access Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                    className="mb-20 rounded-3xl bg-slate-900 relative overflow-hidden"
+                >
+                    {/* Background Gradients */}
+                    <div className="absolute inset-0">
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+                        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-violet-600/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
+                    </div>
+
+                    <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-12">
+                        <div className="flex-1 text-center md:text-left">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-indigo-300 text-xs font-semibold uppercase tracking-wide mb-6">
+                                <GraduationCap className="w-3 h-3" />
+                                Student Portal
+                            </div>
+                            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
+                                Existing Student?<br />
+                                Access <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400">AI INST Academy</span>
+                            </h2>
+                            <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto md:mx-0">
+                                Log in to your learning management system to track progress, access course materials, watch lessons, and manage your certificates.
+                            </p>
+                            <Link href="/student-login">
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="px-8 py-4 rounded-xl bg-white text-slate-900 font-bold hover:bg-indigo-50 transition-colors shadow-lg shadow-white/10 flex items-center gap-2 mx-auto md:mx-0"
+                                >
+                                    Login to Academy <ArrowRight className="w-5 h-5" />
+                                </motion.button>
+                            </Link>
+                        </div>
+
+                        {/* LMS Preview Visual */}
+                        <div className="w-full md:w-5/12 relative">
+                            <div className="relative aspect-[4/3] rounded-xl bg-slate-800/50 border border-white/10 backdrop-blur-md p-4 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500">
+                                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-xl" />
+                                {/* Mock UI Elements */}
+                                <div className="h-full flex flex-col gap-3">
+                                    <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                                        <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
+                                            <GraduationCap className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div className="h-2 w-24 bg-white/20 rounded-full" />
+                                    </div>
+                                    <div className="flex-1 flex gap-3">
+                                        <div className="w-16 h-full bg-white/5 rounded-lg" />
+                                        <div className="flex-1 flex flex-col gap-3">
+                                            <div className="h-24 bg-white/5 rounded-lg border border-white/5 p-3">
+                                                <div className="h-2 w-16 bg-indigo-500/50 rounded-full mb-2" />
+                                                <div className="h-1.5 w-full bg-white/10 rounded-full" />
+                                            </div>
+                                            <div className="h-24 bg-white/5 rounded-lg border border-white/5 p-3 opacity-50">
+                                                <div className="h-2 w-16 bg-purple-500/50 rounded-full mb-2" />
+                                                <div className="h-1.5 w-full bg-white/10 rounded-full" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+
                 {/* Learning Pathway Section Title */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
