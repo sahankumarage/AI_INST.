@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Poppins, JetBrains_Mono } from "next/font/google";
 import ClientLayout from "@/components/layout/ClientLayout";
 import "./globals.css";
@@ -140,11 +141,14 @@ const jsonLd = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const domain = headersList.get('host') || "";
+  const isLMS = domain.includes("learn.aiinst.io");
   return (
     <html lang="en">
       <head>
@@ -156,7 +160,7 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
-        <ClientLayout>
+        <ClientLayout isLMS={isLMS}>
           {children}
         </ClientLayout>
       </body>
