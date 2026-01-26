@@ -16,6 +16,8 @@ import {
     Database
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAlert } from "@/components/ui/AlertService";
+import { useConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface Course {
     _id: string;
@@ -25,11 +27,14 @@ interface Course {
     price: number;
     level: string;
     duration: string;
+    thumbnail?: string;
     enrolledCount: number;
     isPublished: boolean;
 }
 
 export default function AdminCoursesPage() {
+    const alert = useAlert();
+    const { showConfirm, ConfirmModal } = useConfirmModal();
     const [courses, setCourses] = useState<Course[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -40,6 +45,7 @@ export default function AdminCoursesPage() {
     const [formData, setFormData] = useState({
         title: "",
         description: "",
+        thumbnail: "",
         price: 0,
         level: "Beginner",
         duration: "",
@@ -59,14 +65,18 @@ export default function AdminCoursesPage() {
     };
 
     // Fetch courses
-    const fetchCourses = async () => {
+    const fetchCourses = async (showNotification = false) => {
         setIsLoading(true);
         try {
             const res = await fetch('/api/admin/courses');
             const data = await res.json();
             setCourses(data.courses || []);
+            if (showNotification) {
+                alert.success("Courses Loaded", `Found ${data.courses?.length || 0} courses`);
+            }
         } catch (error) {
             console.error('Error fetching courses:', error);
+            alert.error("Failed to load courses", "Please try again");
         } finally {
             setIsLoading(false);
         }
@@ -77,24 +87,44 @@ export default function AdminCoursesPage() {
     }, []);
 
     // Seed courses
-    const handleSeed = async () => {
-        if (!confirm("This will seed the database with sample courses. Continue?")) return;
+    const handleSeed = () => {
+        showConfirm({
+            title: "Seed Database",
+            message: "This will add sample courses to the database. This is useful for testing. Continue?",
+            type: "warning",
+            confirmLabel: "Seed Courses",
+            onConfirm: async () => {
+                setIsSeeding(true);
+                const loadingId = alert.loading("Seeding Courses", "Adding sample courses to database...");
+                try {
+                    const res = await fetch('/api/courses', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'seed', force: true })
+                    });
+                    const data = await res.json();
+                    alert.dismissAlert(loadingId);
+                    alert.success("Seeding Complete", data.message || "Sample courses added successfully");
+                    fetchCourses();
+                } catch (error) {
+                    console.error('Seed error:', error);
+                    alert.dismissAlert(loadingId);
+                    alert.error("Seeding Failed", "Could not add sample courses");
+                } finally {
+                    setIsSeeding(false);
+                }
+            }
+        });
+    };
 
-        setIsSeeding(true);
-        try {
-            const res = await fetch('/api/courses', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'seed', force: true })
-            });
-            const data = await res.json();
-            alert(data.message);
-            fetchCourses();
-        } catch (error) {
-            console.error('Seed error:', error);
-            alert('Failed to seed courses');
-        } finally {
-            setIsSeeding(false);
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                setFormData(prev => ({ ...prev, thumbnail: ev.target?.result as string }));
+            };
+            reader.readAsDataURL(file);
         }
     };
 
@@ -107,6 +137,7 @@ export default function AdminCoursesPage() {
         setFormData({
             title: "",
             description: "",
+            thumbnail: "",
             price: 0,
             level: "Beginner",
             duration: "",
@@ -120,6 +151,7 @@ export default function AdminCoursesPage() {
         setFormData({
             title: course.title,
             description: course.description,
+            thumbnail: course.thumbnail || "",
             price: course.price,
             level: course.level,
             duration: course.duration,
@@ -131,6 +163,8 @@ export default function AdminCoursesPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
+        const action = editingCourse ? "Updating" : "Creating";
+        const loadingId = alert.loading(`${action} Course`, "Please wait...");
 
         try {
             if (editingCourse) {
@@ -141,6 +175,8 @@ export default function AdminCoursesPage() {
                     body: JSON.stringify({ id: editingCourse._id, ...formData })
                 });
                 if (!res.ok) throw new Error('Failed to update');
+                alert.dismissAlert(loadingId);
+                alert.success("Course Updated", `"${formData.title}" has been updated successfully`);
             } else {
                 // Create
                 const res = await fetch('/api/admin/courses', {
@@ -149,44 +185,61 @@ export default function AdminCoursesPage() {
                     body: JSON.stringify(formData)
                 });
                 if (!res.ok) throw new Error('Failed to create');
+                alert.dismissAlert(loadingId);
+                alert.success("Course Created", `"${formData.title}" has been created successfully`);
             }
 
             setIsModalOpen(false);
             fetchCourses();
         } catch (error) {
             console.error('Save error:', error);
-            alert('Failed to save course');
+            alert.dismissAlert(loadingId);
+            alert.error(`Failed to ${editingCourse ? 'update' : 'create'} course`, "Please try again");
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this course?")) return;
-
-        try {
-            const res = await fetch(`/api/admin/courses?id=${id}`, {
-                method: 'DELETE'
-            });
-            if (!res.ok) throw new Error('Failed to delete');
-            fetchCourses();
-        } catch (error) {
-            console.error('Delete error:', error);
-            alert('Failed to delete course');
-        }
+    const handleDelete = (id: string, courseTitle: string) => {
+        showConfirm({
+            title: "Delete Course",
+            message: `Are you sure you want to delete "${courseTitle}"? This action cannot be undone.`,
+            type: "delete",
+            confirmLabel: "Delete Course",
+            onConfirm: async () => {
+                const loadingId = alert.loading("Deleting Course", "Removing course...");
+                try {
+                    const res = await fetch(`/api/admin/courses?id=${id}`, {
+                        method: 'DELETE'
+                    });
+                    if (!res.ok) throw new Error('Failed to delete');
+                    alert.dismissAlert(loadingId);
+                    alert.success("Course Deleted", "The course has been removed successfully");
+                    fetchCourses();
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    alert.dismissAlert(loadingId);
+                    alert.error("Delete Failed", "Could not delete the course");
+                }
+            }
+        });
     };
 
     const togglePublish = async (course: Course) => {
+        const newStatus = !course.isPublished;
+        const statusText = newStatus ? "Published" : "Unpublished";
         try {
             const res = await fetch('/api/admin/courses', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: course._id, isPublished: !course.isPublished })
+                body: JSON.stringify({ id: course._id, isPublished: newStatus })
             });
             if (!res.ok) throw new Error('Failed to update');
+            alert.success(`Course ${statusText}`, `"${course.title}" is now ${statusText.toLowerCase()}`);
             fetchCourses();
         } catch (error) {
             console.error('Toggle error:', error);
+            alert.error("Update Failed", "Could not change publish status");
         }
     };
 
@@ -209,7 +262,7 @@ export default function AdminCoursesPage() {
                 <div className="flex gap-3">
 
                     <button
-                        onClick={fetchCourses}
+                        onClick={() => fetchCourses(true)}
                         className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-medium hover:bg-slate-200 flex items-center gap-2 transition-colors"
                     >
                         <RefreshCw size={18} />
@@ -267,6 +320,9 @@ export default function AdminCoursesPage() {
                         >
                             {/* Thumbnail */}
                             <div className={`h-32 bg-gradient-to-br ${getGradient(i)} relative`}>
+                                {course.thumbnail && (
+                                    <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover absolute inset-0" />
+                                )}
                                 <div className="absolute top-3 right-3">
                                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${course.isPublished
                                         ? 'bg-emerald-500 text-white'
@@ -314,7 +370,7 @@ export default function AdminCoursesPage() {
                                         {course.isPublished ? 'Unpublish' : 'Publish'}
                                     </button>
                                     <button
-                                        onClick={() => handleDelete(course._id)}
+                                        onClick={() => handleDelete(course._id, course.title)}
                                         className="py-2 px-3 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
                                     >
                                         <Trash2 size={14} />
@@ -395,6 +451,43 @@ export default function AdminCoursesPage() {
                                     />
                                 </div>
 
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Cover Image</label>
+                                    <div className="flex items-start gap-4">
+                                        {(formData.thumbnail || editingCourse?.thumbnail) && (
+                                            <div className="w-24 h-16 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 bg-slate-100 relative">
+                                                <img
+                                                    src={formData.thumbnail || editingCourse?.thumbnail}
+                                                    alt="Cover"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, thumbnail: "" })}
+                                                    className="absolute top-0 right-0 p-0.5 bg-red-500 text-white rounded-bl-md hover:bg-red-600"
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        )}
+                                        <div className="flex-1">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleImageChange}
+                                                className="block w-full text-sm text-slate-500
+                                                    file:mr-4 file:py-2.5 file:px-4
+                                                    file:rounded-xl file:border-0
+                                                    file:text-sm file:font-semibold
+                                                    file:bg-indigo-50 file:text-indigo-700
+                                                    hover:file:bg-indigo-100 transition-colors
+                                                "
+                                            />
+                                            <p className="mt-1 text-xs text-slate-400">JPG, PNG or WEBP (Max 2MB)</p>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1.5">Price ($)</label>
@@ -472,6 +565,9 @@ export default function AdminCoursesPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Confirm Modal */}
+            <ConfirmModal />
         </div>
     );
 }

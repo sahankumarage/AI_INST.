@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     DollarSign,
     TrendingUp,
@@ -11,9 +11,15 @@ import {
     ArrowUpRight,
     CheckCircle,
     Clock,
-    XCircle
+    XCircle,
+    Eye,
+    X,
+    Check,
+    Loader2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { useAlert } from "@/components/ui/AlertService";
 
 interface Payment {
     id: string;
@@ -25,15 +31,8 @@ interface Payment {
     paymentMethod: string;
     date: string;
     transactionId: string;
+    receiptImage?: string;
 }
-
-const mockPayments: Payment[] = [
-    { id: "1", studentName: "Alice Johnson", studentEmail: "alice@example.com", courseName: "AI-Driven Web Development", amount: 299, status: "completed", paymentMethod: "Dodo Payments", date: "2024-01-15 14:32", transactionId: "dodo_tx_abc123" },
-    { id: "2", studentName: "Bob Smith", studentEmail: "bob@example.com", courseName: "AI Fundamentals", amount: 149, status: "completed", paymentMethod: "Dodo Payments", date: "2024-01-14 09:15", transactionId: "dodo_tx_def456" },
-    { id: "3", studentName: "Charlie Brown", studentEmail: "charlie@example.com", courseName: "Content Creation", amount: 199, status: "pending", paymentMethod: "Dodo Payments", date: "2024-01-14 16:45", transactionId: "dodo_tx_ghi789" },
-    { id: "4", studentName: "Diana Prince", studentEmail: "diana@example.com", courseName: "AI-Driven Web Development", amount: 299, status: "completed", paymentMethod: "Dodo Payments", date: "2024-01-13 11:20", transactionId: "dodo_tx_jkl012" },
-    { id: "5", studentName: "Edward Norton", studentEmail: "edward@example.com", courseName: "AI Fundamentals", amount: 149, status: "failed", paymentMethod: "Dodo Payments", date: "2024-01-12 08:55", transactionId: "dodo_tx_mno345" },
-];
 
 const statusConfig = {
     completed: { icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-100' },
@@ -42,9 +41,69 @@ const statusConfig = {
 };
 
 export default function AdminPaymentsPage() {
-    const [payments, setPayments] = useState<Payment[]>(mockPayments);
+    const alertService = useAlert();
+    const [payments, setPayments] = useState<Payment[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
-    const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending' | 'failed'>('all');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending' | 'failed' | 'bank' | 'card'>('all');
+
+    const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+    const [isActionLoading, setIsActionLoading] = useState(false);
+
+    useEffect(() => {
+        fetchPayments();
+    }, []);
+
+    const fetchPayments = async () => {
+        try {
+            const res = await fetch('/api/admin/payments');
+            const data = await res.json();
+            if (data.payments) {
+                setPayments(data.payments);
+            }
+        } catch (error) {
+            console.error("Failed to fetch payments", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleAction = async (action: 'approve' | 'reject') => {
+        if (!selectedPayment) return;
+
+        setIsActionLoading(true);
+        try {
+            const res = await fetch('/api/admin/payments', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    paymentId: selectedPayment.id,
+                    action
+                })
+            });
+
+            if (!res.ok) throw new Error("Action failed");
+
+            alertService.success(
+                action === 'approve' ? "Payment Approved" : "Payment Rejected",
+                `The payment has been marked as ${action === 'approve' ? 'completed' : 'failed'}.`
+            );
+
+            // Update local state
+            setPayments(prev => prev.map(p =>
+                p.id === selectedPayment.id
+                    ? { ...p, status: action === 'approve' ? 'completed' : 'failed' }
+                    : p
+            ));
+
+            setSelectedPayment(null);
+
+        } catch (error) {
+            alertService.error("Error", "Failed to update payment status");
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
 
     // Calculate stats
     const totalRevenue = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
@@ -56,8 +115,25 @@ export default function AdminPaymentsPage() {
             p.transactionId.toLowerCase().includes(searchQuery.toLowerCase());
 
         if (filterStatus === 'all') return matchesSearch;
+
+        if (filterStatus === 'bank') {
+            return matchesSearch && p.paymentMethod === 'Bank Transfer';
+        }
+
+        if (filterStatus === 'card') {
+            return matchesSearch && p.paymentMethod !== 'Bank Transfer';
+        }
+
         return matchesSearch && p.status === filterStatus;
     });
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-7xl mx-auto">
@@ -68,9 +144,9 @@ export default function AdminPaymentsPage() {
                     <p className="text-slate-500">Track revenue and manage transactions</p>
                 </div>
                 <div className="flex gap-3">
-                    <button className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50 flex items-center gap-2 transition-colors">
-                        <Calendar size={18} />
-                        <span className="hidden sm:inline">This Month</span>
+                    <button onClick={fetchPayments} className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50 flex items-center gap-2 transition-colors">
+                        <TrendingUp size={18} />
+                        <span className="hidden sm:inline">Refresh</span>
                     </button>
                     <button className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50 flex items-center gap-2 transition-colors">
                         <Download size={18} />
@@ -148,16 +224,16 @@ export default function AdminPaymentsPage() {
                         />
                     </div>
                     <div className="flex gap-2">
-                        {['all', 'completed', 'pending', 'failed'].map((status) => (
+                        {['all', 'completed', 'pending', 'failed', 'bank', 'card'].map((status) => (
                             <button
                                 key={status}
                                 onClick={() => setFilterStatus(status as any)}
                                 className={`px-4 py-2.5 rounded-xl font-medium text-sm capitalize transition-colors ${filterStatus === status
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                     }`}
                             >
-                                {status}
+                                {status === 'bank' ? 'Bank Transfer' : status === 'card' ? 'Card' : status}
                             </button>
                         ))}
                     </div>
@@ -178,9 +254,10 @@ export default function AdminPaymentsPage() {
                                 <th className="text-left py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Student</th>
                                 <th className="text-left py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Course</th>
                                 <th className="text-left py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
+                                <th className="text-left py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Method</th>
                                 <th className="text-left py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                                 <th className="text-left py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
-                                <th className="text-left py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Transaction ID</th>
+                                <th className="text-left py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Receipt</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -200,8 +277,19 @@ export default function AdminPaymentsPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="py-4 px-6 text-sm text-slate-600">{payment.courseName}</td>
+                                        <td className="py-4 px-6 text-sm text-slate-600 max-w-[200px] truncate" title={payment.courseName}>{payment.courseName}</td>
                                         <td className="py-4 px-6 font-semibold text-slate-900">${payment.amount}</td>
+                                        <td className="py-4 px-6 text-sm text-slate-600 capitalize">
+                                            {payment.paymentMethod === 'Bank Transfer' ? (
+                                                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100">
+                                                    Bank Transfer
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 text-slate-700 text-xs font-medium border border-slate-200">
+                                                    Card
+                                                </span>
+                                            )}
+                                        </td>
                                         <td className="py-4 px-6">
                                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusConfig[payment.status].bg} ${statusConfig[payment.status].color}`}>
                                                 <StatusIcon size={12} />
@@ -209,7 +297,19 @@ export default function AdminPaymentsPage() {
                                             </span>
                                         </td>
                                         <td className="py-4 px-6 text-sm text-slate-600">{payment.date}</td>
-                                        <td className="py-4 px-6 text-xs text-slate-400 font-mono">{payment.transactionId}</td>
+                                        <td className="py-4 px-6">
+                                            {payment.receiptImage && (
+                                                <button
+                                                    onClick={() => setSelectedPayment(payment)}
+                                                    className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-lg transition-colors"
+                                                >
+                                                    <Eye size={14} /> View
+                                                </button>
+                                            )}
+                                            {!payment.receiptImage && payment.paymentMethod !== 'Bank Transfer' && (
+                                                <span className="text-xs text-slate-400">Automated</span>
+                                            )}
+                                        </td>
                                     </tr>
                                 );
                             })}
@@ -223,6 +323,81 @@ export default function AdminPaymentsPage() {
                     </div>
                 )}
             </motion.div>
+
+            {/* Receipt Modal */}
+            <AnimatePresence>
+                {selectedPayment && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+                        onClick={() => setSelectedPayment(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                                <h3 className="font-bold text-slate-900">Payment Receipt</h3>
+                                <button onClick={() => setSelectedPayment(null)} className="p-1 rounded-full hover:bg-slate-200">
+                                    <X size={20} className="text-slate-500" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 overflow-y-auto">
+                                <div className="mb-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-sm text-slate-500">Amount</span>
+                                        <span className="text-lg font-bold text-slate-900">${selectedPayment.amount}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-sm text-slate-500">Transaction ID</span>
+                                        <span className="text-sm font-mono text-slate-700">{selectedPayment.transactionId}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-sm text-slate-500">Status</span>
+                                        <span className={`text-sm font-semibold capitalize ${statusConfig[selectedPayment.status].color}`}>
+                                            {selectedPayment.status}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="rounded-xl border border-slate-200 overflow-hidden bg-slate-50 min-h-[200px] flex items-center justify-center relative">
+                                    {selectedPayment.receiptImage ? (
+                                        <img src={selectedPayment.receiptImage} alt="Receipt" className="max-w-full h-auto object-contain" />
+                                    ) : (
+                                        <span className="text-slate-400 text-sm">No image available</span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {selectedPayment.status === 'pending' && (
+                                <div className="p-4 border-t border-slate-100 flex gap-3">
+                                    <button
+                                        onClick={() => handleAction('reject')}
+                                        disabled={isActionLoading}
+                                        className="flex-1 py-2.5 rounded-xl border border-red-200 text-red-600 font-semibold hover:bg-red-50 transition-colors disabled:opacity-50"
+                                    >
+                                        Reject
+                                    </button>
+                                    <button
+                                        onClick={() => handleAction('approve')}
+                                        disabled={isActionLoading}
+                                        className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                    >
+                                        {isActionLoading && <Loader2 size={16} className="animate-spin" />}
+                                        Approve Payment
+                                    </button>
+                                </div>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

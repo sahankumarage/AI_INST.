@@ -22,11 +22,16 @@ import {
     Users,
     Settings,
     Upload,
-    X
+    X,
+    Bell,
+    Pin,
+    Send
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAlert } from "@/components/ui/AlertService";
+import { useConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface Resource {
     name: string;
@@ -78,11 +83,22 @@ interface Course {
     enrolledCount: number;
 }
 
-type TabType = 'content' | 'live-classes' | 'assignments' | 'settings';
+interface Announcement {
+    _id: string;
+    title: string;
+    content: string;
+    authorName: string;
+    isPinned: boolean;
+    createdAt: string;
+}
+
+type TabType = 'content' | 'live-classes' | 'assignments' | 'announcements' | 'settings';
 
 export default function CourseContentPage() {
     const { slug } = useParams();
     const router = useRouter();
+    const alert = useAlert();
+    const { showConfirm, ConfirmModal } = useConfirmModal();
     const [course, setCourse] = useState<Course | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -91,11 +107,47 @@ export default function CourseContentPage() {
     const [editingLesson, setEditingLesson] = useState<string | null>(null);
     const [editingModule, setEditingModule] = useState<string | null>(null);
 
+    // Auto-save
+    const [hasChanges, setHasChanges] = useState(false);
+    const [lastSaved, setLastSaved] = useState<Date | null>(null);
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isInitialLoad = useRef(true);
+
+    // Announcements
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '', isPinned: false });
+    const [isCreatingAnnouncement, setIsCreatingAnnouncement] = useState(false);
+
     useEffect(() => {
         if (slug) {
             fetchCourse();
+            fetchAnnouncements();
         }
     }, [slug]);
+
+    // Auto-save effect
+    useEffect(() => {
+        if (isInitialLoad.current) {
+            isInitialLoad.current = false;
+            return;
+        }
+
+        if (!course || !hasChanges) return;
+
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        saveTimeoutRef.current = setTimeout(() => {
+            saveCourse(true); // true = auto-save (silent)
+        }, 2000);
+
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, [course]);
 
     const fetchCourse = async () => {
         setIsLoading(true);
@@ -103,7 +155,6 @@ export default function CourseContentPage() {
             const res = await fetch(`/api/courses?slug=${slug}`);
             const data = await res.json();
             if (data.course) {
-                // Ensure modules array exists
                 const courseData = {
                     ...data.course,
                     modules: data.course.modules || [],
@@ -112,19 +163,29 @@ export default function CourseContentPage() {
                     instructor: data.course.instructor || { name: '', bio: '', avatar: '' }
                 };
                 setCourse(courseData);
-                // Expand first module by default
                 if (courseData.modules.length > 0) {
                     setExpandedModules(new Set([courseData.modules[0].id]));
                 }
             }
         } catch (error) {
             console.error('Error fetching course:', error);
+            alert.error("Failed to load course", "Please try again");
         } finally {
             setIsLoading(false);
         }
     };
 
-    const saveCourse = async () => {
+    const fetchAnnouncements = async () => {
+        try {
+            const res = await fetch(`/api/admin/announcements?courseSlug=${slug}`);
+            const data = await res.json();
+            setAnnouncements(data.announcements || []);
+        } catch (error) {
+            console.error('Error fetching announcements:', error);
+        }
+    };
+
+    const saveCourse = async (isAutoSave = false) => {
         if (!course) return;
         setIsSaving(true);
         try {
@@ -135,20 +196,38 @@ export default function CourseContentPage() {
             });
             const data = await res.json();
             if (res.ok) {
-                // Update local state with the saved course data
                 if (data.course) {
                     setCourse(data.course);
                 }
-                alert('Course saved successfully!');
+                setHasChanges(false);
+                setLastSaved(new Date());
+                if (!isAutoSave) {
+                    alert.success("Course Saved", "All changes have been saved successfully");
+                }
             } else {
                 throw new Error(data.message || 'Failed to save');
             }
         } catch (error: any) {
             console.error('Error saving course:', error);
-            alert('Failed to save course: ' + (error.message || 'Unknown error'));
+            alert.error("Save Failed", error.message || 'Unknown error');
         } finally {
             setIsSaving(false);
         }
+    };
+
+    // Helper to format date for datetime-local input
+    const formatDateForInput = (dateString: string | undefined) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        // Adjust for local timezone
+        const offset = date.getTimezoneOffset() * 60000;
+        const localDate = new Date(date.getTime() - offset);
+        return localDate.toISOString().slice(0, 16);
+    };
+
+    // Mark changes for auto-save
+    const markChanged = () => {
+        setHasChanges(true);
     };
 
     const toggleModule = (moduleId: string) => {
@@ -176,6 +255,7 @@ export default function CourseContentPage() {
         });
         setExpandedModules(new Set([...expandedModules, newModule.id]));
         setEditingModule(newModule.id);
+        markChanged();
     };
 
     const updateModule = (moduleId: string, updates: Partial<Module>) => {
@@ -186,14 +266,24 @@ export default function CourseContentPage() {
                 m.id === moduleId ? { ...m, ...updates } : m
             )
         });
+        markChanged();
     };
 
-    const deleteModule = (moduleId: string) => {
+    const deleteModule = (moduleId: string, moduleTitle: string) => {
         if (!course) return;
-        if (!confirm('Delete this module and all its lessons?')) return;
-        setCourse({
-            ...course,
-            modules: course.modules.filter(m => m.id !== moduleId)
+        showConfirm({
+            title: "Delete Module",
+            message: `Are you sure you want to delete "${moduleTitle}" and all its lessons? This action cannot be undone.`,
+            type: "delete",
+            confirmLabel: "Delete Module",
+            onConfirm: async () => {
+                setCourse({
+                    ...course,
+                    modules: course.modules.filter(m => m.id !== moduleId)
+                });
+                markChanged();
+                alert.success("Module Deleted", "The module has been removed");
+            }
         });
     };
 
@@ -237,18 +327,28 @@ export default function CourseContentPage() {
                     : m
             )
         });
+        markChanged();
     };
 
-    const deleteLesson = (moduleId: string, lessonId: string) => {
+    const deleteLesson = (moduleId: string, lessonId: string, lessonTitle: string) => {
         if (!course) return;
-        if (!confirm('Delete this lesson?')) return;
-        setCourse({
-            ...course,
-            modules: course.modules.map(m =>
-                m.id === moduleId
-                    ? { ...m, lessons: m.lessons.filter(l => l.id !== lessonId) }
-                    : m
-            )
+        showConfirm({
+            title: "Delete Lesson",
+            message: `Are you sure you want to delete "${lessonTitle}"? This action cannot be undone.`,
+            type: "delete",
+            confirmLabel: "Delete Lesson",
+            onConfirm: async () => {
+                setCourse({
+                    ...course,
+                    modules: course.modules.map(m =>
+                        m.id === moduleId
+                            ? { ...m, lessons: m.lessons.filter(l => l.id !== lessonId) }
+                            : m
+                    )
+                });
+                markChanged();
+                alert.success("Lesson Deleted", "The lesson has been removed");
+            }
         });
     };
 
@@ -371,9 +471,15 @@ export default function CourseContentPage() {
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 items-center">
+                    {hasChanges && (
+                        <span className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-full">Unsaved changes</span>
+                    )}
+                    {lastSaved && !hasChanges && (
+                        <span className="text-sm text-slate-400">Saved</span>
+                    )}
                     <button
-                        onClick={saveCourse}
+                        onClick={() => saveCourse(false)}
                         disabled={isSaving}
                         className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 flex items-center gap-2 transition-colors disabled:opacity-50"
                     >
@@ -388,6 +494,7 @@ export default function CourseContentPage() {
                 {[
                     { id: 'content', label: 'Course Content', icon: BookOpen },
                     { id: 'live-classes', label: 'Live Classes', icon: Video },
+                    { id: 'announcements', label: 'Announcements', icon: Bell },
                     { id: 'assignments', label: 'Assignments', icon: FileText },
                     { id: 'settings', label: 'Settings', icon: Settings }
                 ].map(tab => (
@@ -456,7 +563,7 @@ export default function CourseContentPage() {
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            deleteModule(module.id);
+                                            deleteModule(module.id, module.title);
                                         }}
                                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                     >
@@ -659,7 +766,7 @@ export default function CourseContentPage() {
                                                                             <Edit2 size={16} />
                                                                         </button>
                                                                         <button
-                                                                            onClick={() => deleteLesson(module.id, lesson.id)}
+                                                                            onClick={() => deleteLesson(module.id, lesson.id, lesson.title)}
                                                                             className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                                         >
                                                                             <Trash2 size={16} />
@@ -767,9 +874,171 @@ export default function CourseContentPage() {
                                         >
                                             <Edit2 size={16} />
                                         </button>
-                                  </div>
+                                    </div>
                                 </div>
                             ))
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Announcements Tab */}
+            {activeTab === 'announcements' && (
+                <div className="space-y-6">
+                    {/* Create Announcement */}
+                    <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                        <h3 className="text-lg font-bold text-slate-900 mb-4">Create Announcement</h3>
+                        <div className="space-y-4">
+                            <input
+                                type="text"
+                                placeholder="Announcement title..."
+                                value={newAnnouncement.title}
+                                onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
+                                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                            />
+                            <textarea
+                                placeholder="Write your announcement..."
+                                value={newAnnouncement.content}
+                                onChange={(e) => setNewAnnouncement({ ...newAnnouncement, content: e.target.value })}
+                                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 min-h-[100px] resize-y"
+                            />
+                            <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={newAnnouncement.isPinned}
+                                        onChange={(e) => setNewAnnouncement({ ...newAnnouncement, isPinned: e.target.checked })}
+                                        className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                                    />
+                                    <Pin size={16} className="text-slate-500" />
+                                    <span className="text-sm text-slate-600">Pin this announcement</span>
+                                </label>
+                                <button
+                                    onClick={async () => {
+                                        if (!newAnnouncement.title || !newAnnouncement.content) {
+                                            alert.warning("Missing Fields", "Please enter a title and content for the announcement");
+                                            return;
+                                        }
+                                        setIsCreatingAnnouncement(true);
+                                        try {
+                                            const res = await fetch('/api/admin/announcements', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    courseSlug: slug,
+                                                    title: newAnnouncement.title,
+                                                    content: newAnnouncement.content,
+                                                    isPinned: newAnnouncement.isPinned,
+                                                    authorId: 'admin', // This should come from session
+                                                    authorName: 'Admin'
+                                                })
+                                            });
+                                            if (res.ok) {
+                                                setNewAnnouncement({ title: '', content: '', isPinned: false });
+                                                fetchAnnouncements();
+                                                alert.success("Announcement Created", "Your announcement has been posted");
+                                            } else {
+                                                throw new Error('Failed to create announcement');
+                                            }
+                                        } catch (error) {
+                                            console.error('Error creating announcement:', error);
+                                            alert.error("Creation Failed", "Could not create announcement");
+                                        } finally {
+                                            setIsCreatingAnnouncement(false);
+                                        }
+                                    }}
+                                    disabled={isCreatingAnnouncement}
+                                    className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 flex items-center gap-2 transition-colors disabled:opacity-50"
+                                >
+                                    {isCreatingAnnouncement ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                    Post Announcement
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Announcements List */}
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                        <div className="p-4 border-b border-slate-200">
+                            <h3 className="font-semibold text-slate-900">All Announcements ({announcements.length})</h3>
+                        </div>
+                        {announcements.length === 0 ? (
+                            <div className="p-12 text-center">
+                                <Bell className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                <p className="text-slate-500">No announcements yet. Create one above!</p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-slate-100">
+                                {announcements.map((announcement) => (
+                                    <div key={announcement._id} className="p-4 hover:bg-slate-50">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    {announcement.isPinned && (
+                                                        <Pin size={14} className="text-indigo-500" />
+                                                    )}
+                                                    <h4 className="font-semibold text-slate-900">{announcement.title}</h4>
+                                                </div>
+                                                <p className="text-slate-600 text-sm mb-2">{announcement.content}</p>
+                                                <p className="text-xs text-slate-400">
+                                                    Posted by {announcement.authorName} • {new Date(announcement.createdAt).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            await fetch('/api/admin/announcements', {
+                                                                method: 'PUT',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({
+                                                                    id: announcement._id,
+                                                                    isPinned: !announcement.isPinned
+                                                                })
+                                                            });
+                                                            fetchAnnouncements();
+                                                        } catch (error) {
+                                                            console.error('Error toggling pin:', error);
+                                                        }
+                                                    }}
+                                                    className={`p-2 rounded-lg transition-colors ${announcement.isPinned
+                                                        ? 'bg-indigo-100 text-indigo-600'
+                                                        : 'text-slate-400 hover:bg-slate-100'
+                                                        }`}
+                                                    title={announcement.isPinned ? "Unpin" : "Pin"}
+                                                >
+                                                    <Pin size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        showConfirm({
+                                                            title: "Delete Announcement",
+                                                            message: `Are you sure you want to delete "${announcement.title}"?`,
+                                                            type: "delete",
+                                                            confirmLabel: "Delete",
+                                                            onConfirm: async () => {
+                                                                try {
+                                                                    await fetch(`/api/admin/announcements?id=${announcement._id}`, {
+                                                                        method: 'DELETE'
+                                                                    });
+                                                                    fetchAnnouncements();
+                                                                    alert.success("Announcement Deleted", "The announcement has been removed");
+                                                                } catch (error) {
+                                                                    console.error('Error deleting announcement:', error);
+                                                                    alert.error("Delete Failed", "Could not delete announcement");
+                                                                }
+                                                            }
+                                                        });
+                                                    }}
+                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
                 </div>
@@ -815,7 +1084,7 @@ export default function CourseContentPage() {
                                 <input
                                     type="number"
                                     value={course.price}
-                                    onChange={(e) => setCourse({ ...course, price: Number(e.target.value) })}
+                                    onChange={(e) => { setCourse({ ...course, price: Number(e.target.value) }); markChanged(); }}
                                     className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
                                 />
                             </div>
@@ -833,7 +1102,7 @@ export default function CourseContentPage() {
                                 <label className="block text-sm font-medium text-slate-700 mb-2">Level</label>
                                 <select
                                     value={course.level}
-                                    onChange={(e) => setCourse({ ...course, level: e.target.value })}
+                                    onChange={(e) => { setCourse({ ...course, level: e.target.value }); markChanged(); }}
                                     className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 bg-white"
                                 >
                                     <option value="Beginner">Beginner</option>
@@ -845,7 +1114,7 @@ export default function CourseContentPage() {
                                 <label className="block text-sm font-medium text-slate-700 mb-2">Published</label>
                                 <select
                                     value={course.isPublished ? 'true' : 'false'}
-                                    onChange={(e) => setCourse({ ...course, isPublished: e.target.value === 'true' })}
+                                    onChange={(e) => { setCourse({ ...course, isPublished: e.target.value === 'true' }); markChanged(); }}
                                     className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 bg-white"
                                 >
                                     <option value="true">Published</option>
@@ -859,7 +1128,7 @@ export default function CourseContentPage() {
                         <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
                         <textarea
                             value={course.description}
-                            onChange={(e) => setCourse({ ...course, description: e.target.value })}
+                            onChange={(e) => { setCourse({ ...course, description: e.target.value }); markChanged(); }}
                             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 h-32"
                         />
                     </div>
@@ -868,7 +1137,7 @@ export default function CourseContentPage() {
                         <label className="block text-sm font-medium text-slate-700 mb-2">Long Description</label>
                         <textarea
                             value={course.longDescription || ''}
-                            onChange={(e) => setCourse({ ...course, longDescription: e.target.value })}
+                            onChange={(e) => { setCourse({ ...course, longDescription: e.target.value }); markChanged(); }}
                             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 h-40"
                         />
                     </div>
@@ -893,10 +1162,13 @@ export default function CourseContentPage() {
                                 <input
                                     type="text"
                                     value={course.instructor?.bio || ''}
-                                    onChange={(e) => setCourse({
-                                        ...course,
-                                        instructor: { ...course.instructor, bio: e.target.value }
-                                    })}
+                                    onChange={(e) => {
+                                        setCourse({
+                                            ...course,
+                                            instructor: { ...course.instructor, bio: e.target.value }
+                                        });
+                                        markChanged();
+                                    }}
                                     className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
                                 />
                             </div>
@@ -904,6 +1176,8 @@ export default function CourseContentPage() {
                     </div>
                 </div>
             )}
+            {/* Confirm Modal */}
+            <ConfirmModal />
         </div>
     );
 }

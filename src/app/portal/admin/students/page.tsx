@@ -14,6 +14,7 @@ import {
     RefreshCw
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAlert } from "@/components/ui/AlertService";
 
 interface EnrolledCourse {
     courseSlug: string;
@@ -41,21 +42,26 @@ interface Stats {
 }
 
 export default function AdminStudentsPage() {
+    const alert = useAlert();
     const [students, setStudents] = useState<Student[]>([]);
     const [stats, setStats] = useState<Stats>({ totalStudents: 0, paidStudents: 0, totalRevenue: 0, totalEnrollments: 0 });
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'pending'>('all');
 
-    const fetchStudents = async () => {
+    const fetchStudents = async (showNotification = false) => {
         setIsLoading(true);
         try {
             const res = await fetch('/api/admin/students');
             const data = await res.json();
             setStudents(data.students || []);
             setStats(data.stats || { totalStudents: 0, paidStudents: 0, totalRevenue: 0, totalEnrollments: 0 });
+            if (showNotification) {
+                alert.success("Students Loaded", `Found ${data.students?.length || 0} students`);
+            }
         } catch (error) {
             console.error('Error fetching students:', error);
+            alert.error("Failed to load students", "Please try again");
         } finally {
             setIsLoading(false);
         }
@@ -68,15 +74,19 @@ export default function AdminStudentsPage() {
     const handleDelete = async (id: string) => {
         if (!confirm("Are you sure you want to delete this student?")) return;
 
+        const loadingId = alert.loading("Deleting Student", "Removing student record...");
         try {
             const res = await fetch(`/api/admin/students?id=${id}`, {
                 method: 'DELETE'
             });
             if (!res.ok) throw new Error('Failed to delete');
+            alert.dismissAlert(loadingId);
+            alert.success("Student Deleted", "The student has been removed successfully");
             fetchStudents();
         } catch (error) {
             console.error('Delete error:', error);
-            alert('Failed to delete student');
+            alert.dismissAlert(loadingId);
+            alert.error("Delete Failed", "Could not delete the student");
         }
     };
 
@@ -110,7 +120,7 @@ export default function AdminStudentsPage() {
                 </div>
                 <div className="flex gap-3">
                     <button
-                        onClick={fetchStudents}
+                        onClick={() => fetchStudents(true)}
                         className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-medium hover:bg-slate-200 flex items-center gap-2 transition-colors"
                     >
                         <RefreshCw size={18} />

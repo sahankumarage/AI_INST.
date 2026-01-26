@@ -93,11 +93,11 @@ function StudentLoginContent() {
                     <div className="relative z-10 mt-8">
                         <div className="grid grid-cols-3 gap-4">
                             <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 text-center border border-white/10">
-                                <div className="text-2xl font-bold text-white">50+</div>
+                                <div className="text-2xl font-bold text-white">10+</div>
                                 <div className="text-xs text-slate-400">Courses</div>
                             </div>
                             <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 text-center border border-white/10">
-                                <div className="text-2xl font-bold text-white">10K+</div>
+                                <div className="text-2xl font-bold text-white">300+</div>
                                 <div className="text-xs text-slate-400">Students</div>
                             </div>
                             <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 text-center border border-white/10">

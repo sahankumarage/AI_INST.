@@ -9,6 +9,7 @@ export interface IEnrolledCourse {
     paid: boolean;
     paymentId?: string;
     amount?: number;
+    isEnrolled: boolean; // For soft unenroll
 }
 
 export interface IUser extends Document {
@@ -32,7 +33,8 @@ const EnrolledCourseSchema = new Schema({
     completedLessons: [{ type: String }],
     paid: { type: Boolean, default: false },
     paymentId: { type: String },
-    amount: { type: Number }
+    amount: { type: Number },
+    isEnrolled: { type: Boolean, default: true } // For soft unenroll
 });
 
 const UserSchema = new Schema<IUser>({

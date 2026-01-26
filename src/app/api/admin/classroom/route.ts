@@ -22,52 +22,54 @@ export async function GET() {
         const classroomMap = new Map<string, any>();
 
         students.forEach((student: any) => {
-            student.enrolledCourses.forEach((enrollment: any) => {
-                const slug = enrollment.courseSlug;
+            student.enrolledCourses
+                .filter((e: any) => e.isEnrolled !== false) // Only include active enrollments
+                .forEach((enrollment: any) => {
+                    const slug = enrollment.courseSlug;
 
-                if (!classroomMap.has(slug)) {
+                    if (!classroomMap.has(slug)) {
+                        const courseInfo = courseMap.get(slug);
+                        classroomMap.set(slug, {
+                            courseSlug: slug,
+                            courseName: enrollment.courseName || courseInfo?.title || slug,
+                            totalStudents: 0,
+                            activeStudents: 0,
+                            totalProgress: 0,
+                            students: []
+                        });
+                    }
+
+                    const classroom = classroomMap.get(slug);
                     const courseInfo = courseMap.get(slug);
-                    classroomMap.set(slug, {
-                        courseSlug: slug,
-                        courseName: enrollment.courseName || courseInfo?.title || slug,
-                        totalStudents: 0,
-                        activeStudents: 0,
-                        totalProgress: 0,
-                        students: []
+
+                    // Calculate total lessons from course modules
+                    let totalLessons = 0;
+                    if (courseInfo?.modules) {
+                        courseInfo.modules.forEach((mod: any) => {
+                            totalLessons += mod.lessons?.length || 0;
+                        });
+                    }
+
+                    classroom.students.push({
+                        id: student._id.toString(),
+                        name: `${student.firstName} ${student.lastName}`,
+                        email: student.email,
+                        enrolledAt: enrollment.enrolledAt,
+                        progress: enrollment.progress || 0,
+                        completedLessons: enrollment.completedLessons || [],
+                        totalLessons: totalLessons || enrollment.completedLessons?.length || 0,
+                        paid: enrollment.paid,
+                        amount: enrollment.amount
                     });
-                }
 
-                const classroom = classroomMap.get(slug);
-                const courseInfo = courseMap.get(slug);
+                    classroom.totalStudents++;
+                    classroom.totalProgress += (enrollment.progress || 0);
 
-                // Calculate total lessons from course modules
-                let totalLessons = 0;
-                if (courseInfo?.modules) {
-                    courseInfo.modules.forEach((mod: any) => {
-                        totalLessons += mod.lessons?.length || 0;
-                    });
-                }
-
-                classroom.students.push({
-                    id: student._id.toString(),
-                    name: `${student.firstName} ${student.lastName}`,
-                    email: student.email,
-                    enrolledAt: enrollment.enrolledAt,
-                    progress: enrollment.progress || 0,
-                    completedLessons: enrollment.completedLessons || [],
-                    totalLessons: totalLessons || enrollment.completedLessons?.length || 0,
-                    paid: enrollment.paid,
-                    amount: enrollment.amount
+                    // Count as active if started (progress > 0) but not completed
+                    if (enrollment.progress > 0 && enrollment.progress < 100) {
+                        classroom.activeStudents++;
+                    }
                 });
-
-                classroom.totalStudents++;
-                classroom.totalProgress += (enrollment.progress || 0);
-
-                // Count as active if started (progress > 0) but not completed
-                if (enrollment.progress > 0 && enrollment.progress < 100) {
-                    classroom.activeStudents++;
-                }
-            });
         });
 
         // Calculate averages and format response
@@ -187,11 +189,19 @@ export async function DELETE(req: Request) {
             );
         }
 
-        // Remove the enrollment
-        user.enrolledCourses = user.enrolledCourses.filter(
-            (e: any) => e.courseSlug !== courseSlug
+        // Soft unenroll - set isEnrolled to false instead of removing
+        const enrollment = user.enrolledCourses.find(
+            (e: any) => e.courseSlug === courseSlug
         );
 
+        if (!enrollment) {
+            return NextResponse.json(
+                { message: 'Enrollment not found' },
+                { status: 404 }
+            );
+        }
+
+        enrollment.isEnrolled = false;
         await user.save();
 
         return NextResponse.json({

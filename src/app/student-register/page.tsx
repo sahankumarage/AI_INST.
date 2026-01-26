@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, ArrowRight, GraduationCap } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 function RegisterForm() {
@@ -203,7 +204,7 @@ export default function StudentRegisterPage() {
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                                 <GraduationCap className="w-6 h-6" />
                             </div>
-                            AI Institute
+                            AI Academy
                         </Link>
 
                         <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
@@ -217,13 +218,23 @@ export default function StudentRegisterPage() {
                     <div className="relative z-10 mt-8">
                         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
                             <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex-shrink-0" />
+                                <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0  relative">
+                                    <Image
+                                        src="/images/founder.jpg"
+                                        alt="Sahan Kumarage"
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
                                 <div>
                                     <p className="text-slate-200 italic leading-relaxed">
-                                        "The AI-Driven Web Development course transformed my career. I went from zero coding experience to building full-stack apps in weeks!"
+                                        "AI Academy is more than a platform; it's a movement. We are empowering the next generation of innovators to build the autonomous, intelligent systems that will define our future."
                                     </p>
-                                    <p className="mt-3 font-semibold">Sarah Johnson</p>
-                                    <p className="text-sm text-slate-400">Full Stack Developer @ TechCorp</p>
+                                    <p className="mt-3 font-semibold">Sahan Kumarage</p>
+                                    <p className="text-sm text-slate-400">Founder, AI INST</p>
+                                    <div className="mt-3 pt-3 border-t border-white/10">
+                                        <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Powered by AI INST</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>

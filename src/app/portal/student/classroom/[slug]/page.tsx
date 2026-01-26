@@ -31,6 +31,7 @@ import {
     Calendar,
     ExternalLink
 } from "lucide-react";
+import { useAlert } from "@/components/ui/AlertService";
 
 interface Module {
     id: string;
@@ -97,6 +98,7 @@ type TabType = 'content' | 'schedule' | 'assignments' | 'grades' | 'notes' | 'an
 export default function ClassroomPage() {
     const params = useParams();
     const router = useRouter();
+    const alert = useAlert();
     const slug = typeof params?.slug === 'string' ? params.slug : '';
 
     const [isLoading, setIsLoading] = useState(true);
@@ -155,6 +157,7 @@ export default function ClassroomPage() {
 
         } catch (err: any) {
             setError(err.message || 'Failed to load classroom');
+            alert.error("Failed to load classroom", err.message || "Please try again");
         } finally {
             setIsLoading(false);
         }
@@ -202,9 +205,14 @@ export default function ClassroomPage() {
                         )
                     }))
                 }));
+
+                alert.success("Lesson Completed! 🎉", `Progress updated to ${data.progress}%`);
+            } else {
+                alert.error("Failed to update progress", "Please try again");
             }
         } catch (err) {
             console.error('Failed to mark lesson complete:', err);
+            alert.error("Failed to update progress", "Please try again");
         }
     };
 
@@ -228,9 +236,13 @@ export default function ClassroomPage() {
             if (res.ok) {
                 setNotes(prev => [data.note, ...prev]);
                 setNewNote("");
+                alert.success("Note Saved", "Your note has been saved");
+            } else {
+                alert.error("Failed to save note", "Please try again");
             }
         } catch (err) {
             console.error('Failed to save note:', err);
+            alert.error("Failed to save note", "Please try again");
         } finally {
             setIsSavingNote(false);
         }
@@ -244,9 +256,13 @@ export default function ClassroomPage() {
 
             if (res.ok) {
                 setNotes(prev => prev.filter(n => n._id !== noteId));
+                alert.success("Note Deleted", "Your note has been removed");
+            } else {
+                alert.error("Failed to delete note", "Please try again");
             }
         } catch (err) {
             console.error('Failed to delete note:', err);
+            alert.error("Failed to delete note", "Please try again");
         }
     };
 

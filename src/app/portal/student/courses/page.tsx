@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Play, Clock, BookOpen, ArrowRight, CheckCircle, Loader2, Search, Star, DollarSign } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useAlert } from "@/components/ui/AlertService";
 
 interface EnrolledCourse {
     courseSlug: string;
@@ -12,9 +13,11 @@ interface EnrolledCourse {
     progress: number;
     completedLessons: string[];
     paid: boolean;
+    isPendingVerification?: boolean;
     courseDetails?: {
         title: string;
         description: string;
+        thumbnail?: string;
         duration: string;
         level: string;
         totalLessons: number;
@@ -30,6 +33,7 @@ interface BrowseCourse {
     duration: string;
     price: number;
     level: string;
+    thumbnail?: string;
     lessons?: number;
     rating?: number;
     gradient?: string;
@@ -50,6 +54,7 @@ const getGradient = (index: number, courseGradient?: string) => {
 };
 
 export default function StudentCoursesPage() {
+    const alert = useAlert();
     const [courses, setCourses] = useState<EnrolledCourse[]>([]);
     const [browseCourses, setBrowseCourses] = useState<BrowseCourse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -81,6 +86,7 @@ export default function StudentCoursesPage() {
             setCourses(data.enrolledCourses || []);
         } catch (error) {
             console.error('Error fetching enrollments:', error);
+            alert.error("Failed to load enrollments", "Please refresh the page");
         } finally {
             setIsLoading(false);
         }
@@ -94,13 +100,14 @@ export default function StudentCoursesPage() {
             setBrowseCourses(data.courses || []);
         } catch (error) {
             console.error('Error fetching courses:', error);
+            alert.error("Failed to load courses", "Please try again");
         } finally {
             setIsBrowseLoading(false);
         }
     };
 
-    const enrolledCourses = courses.filter(c => c.progress < 100);
-    const completedCourses = courses.filter(c => c.progress >= 100);
+    const enrolledCourses = courses.filter(c => c.progress < 100 || c.isPendingVerification);
+    const completedCourses = courses.filter(c => c.progress >= 100 && !c.isPendingVerification);
 
     // Filter browse courses by search query
     const filteredBrowseCourses = browseCourses.filter(course =>
@@ -201,13 +208,20 @@ export default function StudentCoursesPage() {
                                 className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all group flex flex-col h-full"
                             >
                                 <div className={`h-48 bg-gradient-to-br ${getGradient(i, course.gradient)} relative overflow-hidden`}>
-                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
-                                    <div className="absolute top-4 left-4">
+                                    {course.thumbnail && (
+                                        <div className="absolute inset-0 z-0">
+                                            <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
+                                        </div>
+                                    )}
+                                    {!course.thumbnail && <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />}
+
+                                    <div className="absolute top-4 left-4 z-10">
                                         <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-white text-xs font-bold border border-white/20">
                                             {course.level}
                                         </span>
                                     </div>
-                                    <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+                                    <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end z-10">
                                         <div className="text-white">
                                             <div className="flex items-center gap-1 text-xs font-medium bg-black/30 backdrop-blur-sm px-2 py-1 rounded-lg w-fit mb-2">
                                                 <Clock size={12} /> {course.duration}
@@ -280,17 +294,27 @@ export default function StudentCoursesPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.1 }}
-                            className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow"
+                            className="relative bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow"
                         >
                             <div className="flex flex-col lg:flex-row">
                                 {/* Thumbnail */}
-                                <div className={`lg:w-72 h-48 lg:h-auto bg-gradient-to-br ${getGradient(i)} relative flex-shrink-0`}>
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
-                                            <Play className="w-8 h-8 text-white ml-1" fill="currentColor" />
+                                <div className={`lg:w-72 h-48 lg:h-auto bg-gradient-to-br ${getGradient(i)} relative flex-shrink-0 overflow-hidden`}>
+                                    {course.courseDetails?.thumbnail && (
+                                        <div className="absolute inset-0 z-0">
+                                            <img src={course.courseDetails.thumbnail} alt={course.courseDetails.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+                                            <div className="absolute inset-0 bg-black/10" />
                                         </div>
-                                    </div>
-                                    <div className="absolute bottom-4 left-4">
+                                    )}
+
+                                    {!course.courseDetails?.thumbnail && (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
+                                                <Play className="w-8 h-8 text-white ml-1" fill="currentColor" />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="absolute bottom-4 left-4 z-10">
                                         <span className="px-3 py-1 bg-black/30 backdrop-blur-sm rounded-full text-white text-sm">
                                             {(course.courseDetails?.totalLessons || 0) - (course.completedLessons?.length || 0)} lessons left
                                         </span>
@@ -356,13 +380,36 @@ export default function StudentCoursesPage() {
                                             <Clock size={14} />
                                             Enrolled {new Date(course.enrolledAt).toLocaleDateString()}
                                         </span>
-                                        <Link href={`/portal/student/classroom/${course.courseSlug}`}>
-                                            <button className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2">
-                                                Continue <ArrowRight size={16} />
+                                        {course.isPendingVerification ? (
+                                            <button disabled className="px-5 py-2.5 bg-amber-100 text-amber-700 rounded-xl font-medium cursor-not-allowed flex items-center gap-2">
+                                                <Clock size={16} />
+                                                Verification Pending
                                             </button>
-                                        </Link>
+                                        ) : (
+                                            <Link href={`/portal/student/classroom/${course.courseSlug}`}>
+                                                <button className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                                                    Continue <ArrowRight size={16} />
+                                                </button>
+                                            </Link>
+                                        )}
                                     </div>
                                 </div>
+                                {course.isPendingVerification && (
+                                    <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-4 border-2 border-amber-200/50 rounded-2xl m-[1px] text-center">
+                                        <div className="bg-white p-3 rounded-full shadow-lg mb-3">
+                                            <Clock className="w-6 h-6 text-amber-500 animate-pulse" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-slate-900 mb-1">Verify Pending</h3>
+                                        <p className="text-sm text-slate-600 max-w-xs mb-3 leading-snug">
+                                            Access will be granted as soon as your payment is approved.
+                                        </p>
+                                        <div className="text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 w-full max-w-[240px]">
+                                            <p className="font-semibold text-slate-800 mb-1">Contact Support:</p>
+                                            <p className="select-all">support@aiinst.lk</p>
+                                            <p className="select-all font-medium">+94 77 123 4567</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     ))}

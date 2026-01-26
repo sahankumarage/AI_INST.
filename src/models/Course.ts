@@ -49,6 +49,8 @@ export interface ICourse extends Document {
     isPublished: boolean;
     enrolledCount: number;
     rating: number;
+    isDeleted: boolean;
+    deletedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -98,7 +100,9 @@ const CourseSchema = new Schema<ICourse>({
     outcomes: [{ type: String }],
     isPublished: { type: Boolean, default: false },
     enrolledCount: { type: Number, default: 0 },
-    rating: { type: Number, default: 0 }
+    rating: { type: Number, default: 0 },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date }
 }, {
     timestamps: true
 });

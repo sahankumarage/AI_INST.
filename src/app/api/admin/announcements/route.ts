@@ -10,7 +10,9 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url);
         const courseSlug = searchParams.get('courseSlug');
 
-        const query = courseSlug ? { courseSlug } : {};
+        const query = courseSlug
+            ? { courseSlug, isDeleted: { $ne: true } }
+            : { isDeleted: { $ne: true } };
         const announcements = await Announcement.find(query)
             .sort({ isPinned: -1, createdAt: -1 });
 
@@ -120,7 +122,12 @@ export async function DELETE(req: Request) {
             );
         }
 
-        const deleted = await Announcement.findByIdAndDelete(id);
+        // Soft delete
+        const deleted = await Announcement.findByIdAndUpdate(
+            id,
+            { isDeleted: true },
+            { new: true }
+        );
 
         if (!deleted) {
             return NextResponse.json(

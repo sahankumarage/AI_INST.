@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAlert } from "@/components/ui/AlertService";
+import { useConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface StudentEnrollment {
     id: string;
@@ -66,6 +68,8 @@ interface CourseInfo {
 }
 
 export default function AdminClassroomPage() {
+    const alert = useAlert();
+    const { showConfirm, ConfirmModal } = useConfirmModal();
     const [classrooms, setClassrooms] = useState<CourseClassroom[]>([]);
     const [allCourses, setAllCourses] = useState<CourseInfo[]>([]);
     const [stats, setStats] = useState<ClassroomStats>({
@@ -81,7 +85,7 @@ export default function AdminClassroomPage() {
     const [progressFilter, setProgressFilter] = useState<string>("all");
     const [viewMode, setViewMode] = useState<'enrollments' | 'courses'>('courses');
 
-    const fetchClassrooms = async () => {
+    const fetchClassrooms = async (showNotification = false) => {
         setIsLoading(true);
         try {
             // Fetch enrollments/classrooms
@@ -99,8 +103,13 @@ export default function AdminClassroomPage() {
             const coursesRes = await fetch('/api/courses?includeDrafts=true');
             const coursesData = await coursesRes.json();
             setAllCourses(coursesData.courses || []);
+
+            if (showNotification) {
+                alert.success("Data Refreshed", `Loaded ${classroomData.classrooms?.length || 0} classrooms`);
+            }
         } catch (error) {
             console.error('Error fetching data:', error);
+            alert.error("Failed to load data", "Please try again");
         } finally {
             setIsLoading(false);
         }
@@ -122,28 +131,45 @@ export default function AdminClassroomPage() {
                 })
             });
             if (res.ok) {
+                alert.success("Progress Updated", newProgress >= 100 ? "Student marked as completed!" : `Progress updated to ${newProgress}%`);
                 fetchClassrooms();
+            } else {
+                alert.error("Update Failed", "Could not update progress");
             }
         } catch (error) {
             console.error('Error updating progress:', error);
+            alert.error("Update Failed", "An error occurred");
         }
     };
 
-    const handleRemoveEnrollment = async (studentId: string, courseSlug: string) => {
-        if (!confirm("Are you sure you want to remove this student from the course?")) return;
-
-        try {
-            const res = await fetch('/api/admin/classroom', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ studentId, courseSlug })
-            });
-            if (res.ok) {
-                fetchClassrooms();
+    const handleRemoveEnrollment = (studentId: string, courseSlug: string, studentName: string) => {
+        showConfirm({
+            title: "Remove Student from Course",
+            message: `Are you sure you want to remove "${studentName}" from this course? Their progress data will be preserved for record keeping.`,
+            type: "delete",
+            confirmLabel: "Remove Student",
+            onConfirm: async () => {
+                const loadingId = alert.loading("Removing Student", "Removing enrollment...");
+                try {
+                    const res = await fetch('/api/admin/classroom', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ studentId, courseSlug })
+                    });
+                    alert.dismissAlert(loadingId);
+                    if (res.ok) {
+                        alert.success("Student Removed", "Enrollment has been removed");
+                        fetchClassrooms();
+                    } else {
+                        alert.error("Remove Failed", "Could not remove student");
+                    }
+                } catch (error) {
+                    console.error('Error removing enrollment:', error);
+                    alert.dismissAlert(loadingId);
+                    alert.error("Remove Failed", "An error occurred");
+                }
             }
-        } catch (error) {
-            console.error('Error removing enrollment:', error);
-        }
+        });
     };
 
     const toggleCourseExpand = (slug: string) => {
@@ -214,7 +240,7 @@ export default function AdminClassroomPage() {
                 </div>
                 <div className="flex gap-3">
                     <button
-                        onClick={fetchClassrooms}
+                        onClick={() => fetchClassrooms(true)}
                         className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-medium hover:bg-slate-200 flex items-center gap-2 transition-colors"
                     >
                         <RefreshCw size={18} />
@@ -634,7 +660,7 @@ export default function AdminClassroomPage() {
                                                                             <button
                                                                                 onClick={(e) => {
                                                                                     e.stopPropagation();
-                                                                                    handleRemoveEnrollment(student.id, classroom.courseSlug);
+                                                                                    handleRemoveEnrollment(student.id, classroom.courseSlug, student.name);
                                                                                 }}
                                                                                 className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                                                 title="Remove from Course"
@@ -657,6 +683,9 @@ export default function AdminClassroomPage() {
                     )}
                 </div>
             )}
+
+            {/* Confirm Modal */}
+            <ConfirmModal />
         </div>
     );
 }

@@ -7,7 +7,8 @@ export async function GET(req: Request) {
     try {
         await dbConnect();
 
-        const courses = await Course.find().sort({ createdAt: -1 });
+        // Filter out soft-deleted courses
+        const courses = await Course.find({ isDeleted: { $ne: true } }).sort({ createdAt: -1 });
 
         // Calculate stats
         const totalCourses = courses.length;
@@ -145,7 +146,12 @@ export async function DELETE(req: Request) {
             );
         }
 
-        const deleted = await Course.findByIdAndDelete(id);
+        // Soft delete - set isDeleted flag instead of removing
+        const deleted = await Course.findByIdAndUpdate(
+            id,
+            { isDeleted: true, deletedAt: new Date() },
+            { new: true }
+        );
 
         if (!deleted) {
             return NextResponse.json(

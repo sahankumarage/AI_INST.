@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Play, Clock, BookOpen, ArrowRight, Trophy, Target, Zap, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useAlert } from "@/components/ui/AlertService";
 
 interface EnrolledCourse {
     courseSlug: string;
@@ -40,6 +41,7 @@ const getGradient = (index: number) => {
 };
 
 export default function StudentDashboard() {
+    const alert = useAlert();
     const [user, setUser] = useState<any>(null);
     const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
     const [stats, setStats] = useState<Stats>({ totalCourses: 0, completedCourses: 0, inProgressCourses: 0 });
@@ -64,6 +66,7 @@ export default function StudentDashboard() {
             setStats(data.stats || { totalCourses: 0, completedCourses: 0, inProgressCourses: 0 });
         } catch (error) {
             console.error('Error fetching enrollments:', error);
+            alert.error("Failed to load courses", "Please refresh the page");
         } finally {
             setIsLoading(false);
         }

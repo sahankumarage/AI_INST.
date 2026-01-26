@@ -139,6 +139,8 @@ All flyers are saved in: `public/flyers/`
 | `lms-platform-flyer.png` | Sri Lanka's Largest AI LMS Platform |
 | `sinhala-web-dev-flyer.png` | Sinhala Web Dev Course Flyer |
 | `sinhala-web-dev-course-v2.png` | Clean Sinhala Course Flyer |
+| `sinhala-real-world-project-flyer.png` | Start Real World Project with AI (Sinhala) |
+| `sinhala-lms-coming-soon-flyer.png` | Free AI LMS Platform Coming Soon (Sinhala) |
 
 ---
 
