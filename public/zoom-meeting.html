@@ -92,9 +92,13 @@
         const userEmail = urlParams.get('userEmail') || '';
         const password = urlParams.get('password') || '';
 
-        console.log('Initializing Zoom Component View...');
-        console.log('Meeting:', meetingNumber);
-        console.log('SDK Key:', sdkKey);
+        console.log('=== ZOOM SDK INITIALIZATION ===');
+        console.log('Meeting Number:', meetingNumber);
+        console.log('Meeting Number (cleaned):', meetingNumber?.replace(/[\s-]/g, ''));
+        console.log('SDK Key:', sdkKey?.substring(0, 10) + '...');
+        console.log('Signature preview:', signature?.substring(0, 50) + '...');
+        console.log('User Name:', userName);
+        console.log('Password present:', !!password);
 
         async function startMeeting() {
             try {
@@ -134,8 +138,25 @@
                 loadingOverlay.classList.add('hidden');
 
             } catch (error) {
-                console.error('Zoom Join Error:', error);
-                statusText.innerText = 'Failed to join: ' + (error.reason || error.message || JSON.stringify(error));
+                console.error('=== ZOOM SDK ERROR ===');
+                console.error('Error object:', error);
+                console.error('Error code:', error.errorCode);
+                console.error('Error message:', error.message);
+                console.error('Error reason:', error.reason);
+                console.error('=== END ZOOM SDK ERROR ===');
+
+                let errorMsg = 'Failed to join meeting';
+                if (error.errorCode === 200) {
+                    errorMsg = 'Meeting has not started yet. Please wait for the instructor.';
+                } else if (error.errorCode === 3712) {
+                    errorMsg = 'Invalid meeting number. Please contact support.';
+                } else if (error.reason) {
+                    errorMsg = 'Error: ' + error.reason;
+                } else if (error.message) {
+                    errorMsg = 'Error: ' + error.message;
+                }
+
+                statusText.innerText = errorMsg;
                 statusText.style.color = '#ef4444';
             }
         }
