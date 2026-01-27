@@ -130,14 +130,24 @@ export default function EnrollPage() {
             }
 
             // Bank transfer logic
-            let receiptBase64 = null;
+            let receiptUrl = '';
             if (paymentMethod === 'bank' && receiptFile) {
-                const reader = new FileReader();
-                receiptBase64 = await new Promise((resolve, reject) => {
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(receiptFile);
+                // Upload to Cloudinary first
+                const formData = new FormData();
+                formData.append('file', receiptFile);
+                formData.append('folder', 'receipts');
+
+                const uploadRes = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
                 });
+
+                if (!uploadRes.ok) {
+                    throw new Error('Failed to upload receipt image');
+                }
+
+                const uploadData = await uploadRes.json();
+                receiptUrl = uploadData.url;
             }
 
             // Call the enrollment API
@@ -151,7 +161,7 @@ export default function EnrollPage() {
                     paymentMethod,
                     amountPaid: finalPrice,
                     status: paymentMethod === 'bank' ? 'pending' : 'active',
-                    receiptImage: receiptBase64
+                    receiptImage: receiptUrl
                 })
             });
 
