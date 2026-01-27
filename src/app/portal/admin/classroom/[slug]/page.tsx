@@ -125,7 +125,7 @@ interface Submission {
     gradedAt?: string;
     status: 'pending' | 'submitted' | 'graded' | 'late';
     submittedAt: string;
-    user?: { name: string; email: string };
+    user?: { name: string; email: string; id?: string };
 }
 
 type TabType = 'content' | 'live-classes' | 'assignments' | 'announcements' | 'settings';
@@ -1509,7 +1509,12 @@ export default function CourseContentPage() {
                                         <div key={submission._id} className="p-4">
                                             <div className="flex items-start justify-between mb-3">
                                                 <div>
-                                                    <h4 className="font-medium text-slate-900">{submission.user?.name || 'Unknown Student'}</h4>
+                                                    <h4 className="font-medium text-slate-900">
+                                                        {submission.user?.name || 'Unknown Student'}
+                                                        {submission.user?.name === 'Unknown Student' && submission.user?.id && (
+                                                            <span className="text-xs text-slate-400 ml-2 font-normal">({String(submission.user.id).substring(0, 8)}...)</span>
+                                                        )}
+                                                    </h4>
                                                     <p className="text-sm text-slate-500">{submission.user?.email}</p>
                                                     <p className="text-xs text-slate-400 mt-1">
                                                         Submitted: {new Date(submission.submittedAt).toLocaleString()}

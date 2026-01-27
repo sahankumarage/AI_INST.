@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
-import { existsSync } from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
+
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(request: NextRequest) {
     try {
@@ -16,12 +21,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Define allowed file types based on folder
+        // Validate File Types
         const imageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         const documentTypes = [
             'application/pdf',
             'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
             'text/plain',
             'application/zip',
             'application/x-zip-compressed'
@@ -43,8 +48,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Max file size: 5MB for images, 10MB for submissions
+        // Validate File Size
+        // Cloudinary handles large files well, but let's keep reasonable limits
+        // 5MB for images, 10MB for documents
         const maxSize = folder === 'submissions' ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+
         if (file.size > maxSize) {
             return NextResponse.json(
                 { error: `File size exceeds ${folder === 'submissions' ? '10MB' : '5MB'} limit` },
@@ -52,48 +60,52 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Convert file to buffer
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Generate unique filename
-        const timestamp = Date.now();
-        const randomString = Math.random().toString(36).substring(2, 8);
-        const extension = file.name.split('.').pop() || 'jpg';
-        const filename = `${timestamp}-${randomString}.${extension}`;
+        // Upload to Cloudinary using a Promise wrapper
+        const result = await new Promise<any>((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder: `ai-institute/${folder}`, // Organize uploads in folders
+                    resource_type: 'auto', // Automatically detect image vs raw (pdf/docs)
+                    use_filename: true,
+                    unique_filename: true,
+                },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
 
-        // Create uploads directory if it doesn't exist
-        const uploadDir = path.join(process.cwd(), 'public', folder);
-        if (!existsSync(uploadDir)) {
-            await mkdir(uploadDir, { recursive: true });
-        }
-
-        // Save file
-        const filePath = path.join(uploadDir, filename);
-        await writeFile(filePath, buffer);
-
-        // Return the public URL
-        const url = `/${folder}/${filename}`;
-
-        return NextResponse.json({
-            success: true,
-            url,
-            filename
+            // Write buffer to stream
+            uploadStream.end(buffer);
         });
 
-    } catch (error) {
-        console.error('Upload error:', error);
+        // Return the secure Cloudinary URL
+        return NextResponse.json({
+            success: true,
+            url: result.secure_url,
+            filename: result.original_filename,
+            format: result.format,
+            public_id: result.public_id
+        });
+
+    } catch (error: any) {
+        console.error('Cloudinary upload error:', error);
         return NextResponse.json(
-            { error: 'Failed to upload file' },
+            { error: error.message || 'Failed to upload file' },
             { status: 500 }
         );
     }
 }
 
-// Configure Next.js to handle larger request bodies
+// Next.js configuration for API route
 export const config = {
     api: {
         bodyParser: {
-            sizeLimit: '10mb'
+            sizeLimit: '10mb' // Match our max file size limit
         }
     }
 };

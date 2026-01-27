@@ -1,21 +1,40 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
+import Payment from '@/models/Payment';
 
 export async function GET() {
     try {
-        const dataPath = path.join(process.cwd(), 'src/data/pending_payments.json');
+        await dbConnect();
 
-        let payments = [];
-        if (fs.existsSync(dataPath)) {
-            const fileContent = fs.readFileSync(dataPath, 'utf8');
-            payments = JSON.parse(fileContent);
-        }
+        const payments = await Payment.find({})
+            .sort({ submittedAt: -1 })
+            .populate('userId', 'firstName lastName email');
 
-        return NextResponse.json({ payments });
+        const formattedPayments = payments.map(p => {
+            // Safe access to populated fields
+            const user = p.userId as any;
+            const studentName = user ? `${user.firstName} ${user.lastName}` : 'Unknown Student';
+            const studentEmail = user ? user.email : 'Unknown Email';
+
+            return {
+                id: p._id,
+                userId: user?._id,
+                studentName,
+                studentEmail,
+                courseSlug: p.courseSlug,
+                courseName: p.courseSlug, // Using slug as name since we don't populate course yet
+                amount: p.amount,
+                status: p.status,
+                paymentMethod: p.method === 'manual' ? 'Bank Transfer' : 'Online',
+                date: p.submittedAt,
+                receiptImage: p.receiptUrl
+            };
+        });
+
+        return NextResponse.json({ payments: formattedPayments });
     } catch (error: any) {
+        console.error("Error fetching payments:", error);
         return NextResponse.json(
             { message: error.message || 'Failed to fetch payments' },
             { status: 500 }
@@ -25,31 +44,25 @@ export async function GET() {
 
 export async function PUT(req: Request) {
     try {
+        await dbConnect();
+
         const { paymentId, action } = await req.json();
 
-        const dataPath = path.join(process.cwd(), 'src/data/pending_payments.json');
+        const payment = await Payment.findById(paymentId);
 
-        if (!fs.existsSync(dataPath)) {
-            return NextResponse.json({ message: 'No payments found' }, { status: 404 });
-        }
-
-        const fileContent = fs.readFileSync(dataPath, 'utf8');
-        let payments = JSON.parse(fileContent);
-
-        const paymentIndex = payments.findIndex((p: any) => p.id === paymentId);
-        if (paymentIndex === -1) {
+        if (!payment) {
             return NextResponse.json({ message: 'Payment not found' }, { status: 404 });
         }
 
-        const payment = payments[paymentIndex];
-
         if (action === 'approve') {
             payment.status = 'completed';
+            payment.processedAt = new Date();
+            // payment.processedBy = ... // If we had auth user context
 
-            // Activate course in DB
+            await payment.save();
+
+            // Activate course in DB for the user
             try {
-                await dbConnect();
-
                 const user = await User.findById(payment.userId);
 
                 if (user) {
@@ -59,7 +72,7 @@ export async function PUT(req: Request) {
                         // Create new enrollment
                         user.enrolledCourses.push({
                             courseSlug: payment.courseSlug,
-                            courseName: payment.courseName,
+                            courseName: payment.courseSlug, // Use slug as name
                             enrolledAt: new Date(),
                             progress: 0,
                             completedLessons: [],
@@ -67,7 +80,7 @@ export async function PUT(req: Request) {
                         });
                         await user.save();
                     } else {
-                        // Just in case they were somehow enrolled but unpaid
+                        // Mark as paid if they were already enrolled (e.g. pending/free)
                         await User.findOneAndUpdate(
                             {
                                 _id: payment.userId,
@@ -81,18 +94,19 @@ export async function PUT(req: Request) {
                 }
             } catch (e) {
                 console.error("DB update failed during approval", e);
+                // We don't rollback payment status here, but might want to flag it or log critical error
             }
 
         } else if (action === 'reject') {
-            payment.status = 'failed';
+            payment.status = 'rejected'; // Using 'rejected' enum instead of failed for admin rejection
+            payment.processedAt = new Date();
+            await payment.save();
         }
-
-        payments[paymentIndex] = payment;
-        fs.writeFileSync(dataPath, JSON.stringify(payments, null, 2));
 
         return NextResponse.json({ message: `Payment ${action}d` });
 
     } catch (error: any) {
+        console.error("Error updating payment:", error);
         return NextResponse.json(
             { message: error.message || 'Failed to update payment' },
             { status: 500 }

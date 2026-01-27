@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import Course from '@/models/Course';
+import Payment from '@/models/Payment';
 
 // GET student's enrolled courses with course details
 export async function GET(req: Request) {
@@ -30,38 +31,26 @@ export async function GET(req: Request) {
         // Get full course details for enrolled courses
         const enrolledCourseSlugs = user.enrolledCourses.map((c: any) => c.courseSlug);
 
-        // Also check for pending payments
-        const fs = require('fs');
-        const path = require('path');
-        const dataPath = path.join(process.cwd(), 'src/data/pending_payments.json');
-        let pendingCourses: any[] = [];
+        // Check for pending payments using Payment model
+        const pendingPayments = await Payment.find({ userId: userId, status: 'pending' });
 
-        if (fs.existsSync(dataPath)) {
-            try {
-                const fileContent = fs.readFileSync(dataPath, 'utf8');
-                const allPending = JSON.parse(fileContent);
-                const userPending = allPending.filter((p: any) => p.userId === userId && p.status === 'pending');
+        const pendingCourses = pendingPayments.map((p: any) => ({
+            courseSlug: p.courseSlug,
+            // We might not have courseName stored in Payment, so we'll fetch it or use slug
+            courseName: p.courseSlug,
+            enrolledAt: p.submittedAt,
+            progress: 0,
+            completedLessons: [],
+            paid: false,
+            isPendingVerification: true
+        }));
 
-                pendingCourses = userPending.map((p: any) => ({
-                    courseSlug: p.courseSlug,
-                    courseName: p.courseName,
-                    enrolledAt: p.date,
-                    progress: 0,
-                    completedLessons: [],
-                    paid: false,
-                    isPendingVerification: true
-                }));
-
-                // Add pending slugs to fetch details
-                userPending.forEach((p: any) => {
-                    if (!enrolledCourseSlugs.includes(p.courseSlug)) {
-                        enrolledCourseSlugs.push(p.courseSlug);
-                    }
-                });
-            } catch (e) {
-                console.error("Error reading pending payments", e);
+        // Add pending slugs to fetch details
+        pendingPayments.forEach((p: any) => {
+            if (!enrolledCourseSlugs.includes(p.courseSlug)) {
+                enrolledCourseSlugs.push(p.courseSlug);
             }
-        }
+        });
 
         const courses = await Course.find({ slug: { $in: enrolledCourseSlugs } });
 
@@ -100,7 +89,7 @@ export async function GET(req: Request) {
         });
 
         // Combine lists
-        // Filter out any active enrollments from pending list (if approved but JSON not updated yet, active takes precedence)
+        // Filter out any active enrollments from pending list (if approved but somehow still pending in Payment, active takes precedence)
         const finalPending = pendingEnrollments.filter((p: any) =>
             !activeEnrollments.some((a: any) => a.courseSlug === p.courseSlug)
         );
@@ -133,6 +122,8 @@ export async function GET(req: Request) {
 // POST enroll in a new course
 export async function POST(req: Request) {
     try {
+        await dbConnect();
+
         const body = await req.json();
         const { userId, courseSlug, courseName, paymentMethod, amountPaid, receiptImage } = body;
 
@@ -143,67 +134,19 @@ export async function POST(req: Request) {
             );
         }
 
-        // Handle Bank Transfer - Save to local JSON for Admin Review
+        // Handle Bank Transfer - Save to Pending Payments Collection
         if (paymentMethod === 'bank') {
-            const fs = require('fs');
-            const path = require('path');
-            const dataPath = path.join(process.cwd(), 'src/data/pending_payments.json');
-
-            // Ensure directory exists
-            const dir = path.dirname(dataPath);
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
-            }
-
-            // Read existing data
-            let pendingPayments = [];
-            if (fs.existsSync(dataPath)) {
-                try {
-                    const fileContent = fs.readFileSync(dataPath, 'utf8');
-                    pendingPayments = JSON.parse(fileContent);
-                } catch (e) {
-                    pendingPayments = [];
-                }
-            }
-
-            // Mock getting user details since we aren't querying DB here for speed/safety
-            // In a real app, we'd query User.findById(userId)
-            // leveraging what we might have or just generic data
 
             // Create new payment record
-            const newPayment = {
-                id: Date.now().toString(),
+            await Payment.create({
                 userId,
-                studentName: "Student (Pending)", // Should ideally fetch from DB
-                studentEmail: "student@example.com",
                 courseSlug,
-                courseName: courseName || courseSlug,
                 amount: amountPaid || 0,
+                method: 'manual',
+                receiptUrl: receiptImage,
                 status: 'pending',
-                paymentMethod: 'Bank Transfer',
-                date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-                transactionId: `bank_${Date.now()}`,
-                receiptImage
-            };
-
-            // Try to fetch real user name if DB connects
-            try {
-                await dbConnect();
-                const user = await User.findById(userId);
-                if (user) {
-                    newPayment.studentName = `${user.firstName} ${user.lastName}`;
-                    newPayment.studentEmail = user.email;
-                }
-            } catch (e) {
-                console.log("Could not fetch user details for receipt, using defaults");
-            }
-
-            pendingPayments.unshift(newPayment);
-
-            fs.writeFileSync(dataPath, JSON.stringify(pendingPayments, null, 2));
-
-            // NOTE: We do NOT add to User.enrolledCourses here. 
-            // The user is not enrolled until Admin approves the payment.
+                transactionId: `bank_${Date.now()}`
+            });
 
             return NextResponse.json({
                 message: 'Receipt submitted successfully',

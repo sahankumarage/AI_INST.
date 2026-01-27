@@ -30,13 +30,23 @@ export async function GET(req: Request) {
         // Get user details for each submission
         const submissionsWithUsers = await Promise.all(
             submissions.map(async (submission) => {
-                const user = await User.findById(submission.userId).select('firstName lastName email');
+                let user = null;
+                try {
+                    user = await User.findById(submission.userId).select('firstName lastName email');
+                } catch (e) {
+                    console.log(`Error finding user for submission ${submission._id}:`, e);
+                }
+
                 return {
                     ...submission.toObject(),
                     user: user ? {
                         name: `${user.firstName} ${user.lastName}`,
                         email: user.email
-                    } : null
+                    } : {
+                        name: 'Unknown Student',
+                        email: 'N/A',
+                        id: submission.userId // Return ID for debugging
+                    }
                 };
             })
         );
