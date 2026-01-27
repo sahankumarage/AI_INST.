@@ -100,6 +100,36 @@ export default function EnrollPage() {
         const loadingId = alertService.loading("Processing Enrollment", "Please wait...");
 
         try {
+            if (paymentMethod === 'card') {
+                // Call Dodo Payment initialization
+                const res = await fetch('/api/payments/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId,
+                        courseSlug: slug,
+                        courseName: course.title,
+                        amount: finalPrice,
+                        successUrl: `${window.location.origin}/portal/student/courses?enrolled=success&slug=${slug}`,
+                        cancelUrl: `${window.location.href}?payment=cancelled`
+                    })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.message || 'Payment processing failed');
+                }
+
+                if (data.paymentUrl) {
+                    window.location.href = data.paymentUrl;
+                    return; // Prevent further execution as we are redirecting
+                } else {
+                    throw new Error('No payment URL received');
+                }
+            }
+
+            // Bank transfer logic
             let receiptBase64 = null;
             if (paymentMethod === 'bank' && receiptFile) {
                 const reader = new FileReader();
@@ -142,7 +172,7 @@ export default function EnrollPage() {
                     courseSlug: slug,
                     courseName: course.title,
                     progress: 0,
-                    paid: paymentMethod === 'card', // If bank, pending
+                    paid: false, // If bank, pending. Card payments redirect before this.
                     enrolledAt: new Date().toISOString()
                 });
                 localStorage.setItem("lms_user", JSON.stringify(user));
@@ -150,11 +180,10 @@ export default function EnrollPage() {
 
             alertService.dismissAlert(loadingId);
 
-            if (paymentMethod === 'bank') {
-                alertService.success("Receipt Submitted", "Your enrollment is processing. We will verify it as soon as possible.");
-            } else {
-                alertService.success("Enrollment Successful! 🎉", "You're now enrolled. Start learning!");
-            }
+            // At this point, it must be a bank transfer or successful API call that didn't redirect (which shouldn't happen for card)
+            alertService.dismissAlert(loadingId);
+            alertService.success("Receipt Submitted", "Your enrollment is processing. We will verify it as soon as possible.");
+            setIsProcessing(false);
 
             router.push("/portal/student/courses?enrolled=success");
 
@@ -162,7 +191,6 @@ export default function EnrollPage() {
             alertService.dismissAlert(loadingId);
             alertService.error("Enrollment Failed", err.message || 'Something went wrong.');
             setError(err.message || 'Something went wrong.');
-        } finally {
             setIsProcessing(false);
         }
     };

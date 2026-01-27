@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -29,9 +29,13 @@ import {
     BarChart3,
     MessageSquare,
     Calendar,
-    ExternalLink
+    ExternalLink,
+    Link as LinkIcon,
+    X,
+    Paperclip
 } from "lucide-react";
 import { useAlert } from "@/components/ui/AlertService";
+import ZoomMeetingEmbed from "@/components/ZoomMeetingEmbed";
 
 interface Module {
     id: string;
@@ -56,6 +60,8 @@ interface Lesson {
     // Live class support
     isLiveClass?: boolean;
     liveClassUrl?: string;
+    zoomMeetingId?: string;
+    zoomMeetingNumber?: string;
     scheduledAt?: string;
     scheduledEndAt?: string;
 }
@@ -68,10 +74,15 @@ interface Assignment {
     dueDate?: string;
     maxGrade: number;
     attachments?: { name: string; url: string }[];
+    allowLateSubmission?: boolean;
     submission?: {
+        _id: string;
         status: string;
         grade?: number;
         feedback?: string;
+        fileUrl?: string;
+        fileName?: string;
+        textContent?: string;
         submittedAt: string;
     };
 }
@@ -88,6 +99,7 @@ interface Announcement {
     _id: string;
     title: string;
     content: string;
+    imageUrl?: string;
     authorName: string;
     isPinned: boolean;
     createdAt: string;
@@ -119,6 +131,70 @@ export default function ClassroomPage() {
     const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
     const [newNote, setNewNote] = useState("");
     const [isSavingNote, setIsSavingNote] = useState(false);
+
+    // Assignment submission state
+    const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submissionType, setSubmissionType] = useState<'file' | 'link' | 'text'>('file');
+    const [submissionLink, setSubmissionLink] = useState('');
+    const [submissionText, setSubmissionText] = useState('');
+    const [submissionFile, setSubmissionFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Zoom State
+    const [zoomDetails, setZoomDetails] = useState<any>(null);
+    const [meetingStatus, setMeetingStatus] = useState<string>('waiting');
+    const [isJoiningZoom, setIsJoiningZoom] = useState(false);
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (selectedLesson?.zoomMeetingId && !zoomDetails) {
+            checkMeetingStatus(selectedLesson.zoomMeetingId);
+            interval = setInterval(() => {
+                checkMeetingStatus(selectedLesson.zoomMeetingId!);
+            }, 30000);
+        }
+        return () => clearInterval(interval);
+    }, [selectedLesson, zoomDetails]);
+
+    const checkMeetingStatus = async (meetingId: string) => {
+        try {
+            const res = await fetch(`/api/zoom/status?meetingId=${meetingId}`);
+            const data = await res.json();
+            if (res.ok) {
+                setMeetingStatus(data.status);
+            }
+        } catch (err) {
+            console.error('Failed to check meeting status', err);
+        }
+    };
+
+    const joinLiveClass = async () => {
+        if (!userId || !selectedLesson) return;
+        setIsJoiningZoom(true);
+        try {
+            const res = await fetch('/api/zoom/signature', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId,
+                    courseSlug: slug,
+                    lessonId: selectedLesson.id
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                setZoomDetails(data);
+            } else {
+                alert.error("Failed to join class", data.message);
+            }
+        } catch (err: any) {
+            alert.error("Failed to join class", err.message);
+        } finally {
+            setIsJoiningZoom(false);
+        }
+    };
 
     useEffect(() => {
         const userStr = localStorage.getItem("lms_user");
@@ -263,6 +339,92 @@ export default function ClassroomPage() {
         } catch (err) {
             console.error('Failed to delete note:', err);
             alert.error("Failed to delete note", "Please try again");
+        }
+    };
+
+    const submitAssignment = async (assignment: Assignment) => {
+        if (!userId) return;
+
+        // Validate submission
+        if (submissionType === 'file' && !submissionFile) {
+            alert.warning("No File Selected", "Please select a file to upload");
+            return;
+        }
+        if (submissionType === 'link' && !submissionLink.trim()) {
+            alert.warning("No Link Provided", "Please enter a link");
+            return;
+        }
+        if (submissionType === 'text' && !submissionText.trim()) {
+            alert.warning("No Content", "Please enter your submission text");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            let fileUrl = '';
+            let fileName = '';
+            let fileType = '';
+
+            // Upload file if needed
+            if (submissionType === 'file' && submissionFile) {
+                const formData = new FormData();
+                formData.append('file', submissionFile);
+                formData.append('folder', 'submissions');
+
+                const uploadRes = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadRes.ok) {
+                    throw new Error('Failed to upload file');
+                }
+
+                const uploadData = await uploadRes.json();
+                fileUrl = uploadData.url;
+                fileName = submissionFile.name;
+                fileType = submissionFile.type;
+            } else if (submissionType === 'link') {
+                fileUrl = submissionLink;
+                fileName = 'Link Submission';
+                fileType = 'link';
+            }
+
+            // Submit assignment
+            const res = await fetch('/api/student/submissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId,
+                    assignmentId: assignment._id,
+                    courseSlug: slug,
+                    lessonId: assignment.lessonId,
+                    fileUrl: fileUrl || undefined,
+                    fileType: fileType || undefined,
+                    fileName: fileName || undefined,
+                    textContent: submissionType === 'text' ? submissionText : undefined
+                })
+            });
+
+            if (res.ok) {
+                // Reset form
+                setSubmissionFile(null);
+                setSubmissionLink('');
+                setSubmissionText('');
+                setSelectedAssignment(null);
+
+                // Refresh data
+                fetchClassroomData(userId);
+                alert.success("Assignment Submitted!", "Your work has been submitted successfully");
+            } else {
+                const data = await res.json();
+                throw new Error(data.message || 'Failed to submit');
+            }
+        } catch (error: any) {
+            console.error('Failed to submit assignment:', error);
+            alert.error("Submission Failed", error.message || "Please try again");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -458,67 +620,88 @@ export default function ClassroomPage() {
                                 <div className="relative z-10">
                                     {(selectedLesson as any).isLiveClass || (selectedLesson as any).liveClassUrl ? (
                                         /* Live Class Mode */
-                                        <div className="text-center">
-                                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-full text-red-400 text-sm font-medium mb-6">
-                                                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                                                Live Online Class
-                                            </div>
-                                            <h3 className="text-2xl font-bold text-white mb-2">{selectedLesson.title}</h3>
+                                        zoomDetails ? (
+                                            <ZoomMeetingEmbed
+                                                meetingNumber={zoomDetails.meetingNumber}
+                                                signature={zoomDetails.signature}
+                                                sdkKey={zoomDetails.sdkKey}
+                                                userName={zoomDetails.userName}
+                                                userEmail={zoomDetails.userEmail}
+                                                password={zoomDetails.password}
+                                                onLeave={() => setZoomDetails(null)}
+                                            />
+                                        ) : (
+                                            <div className="text-center">
+                                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-full text-red-400 text-sm font-medium mb-6">
+                                                    <span className={`w-2 h-2 rounded-full ${meetingStatus === 'started' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                                                    {meetingStatus === 'started' ? 'Live Now' : 'Live Online Class'}
+                                                </div>
+                                                <h3 className="text-2xl font-bold text-white mb-2">{selectedLesson.title}</h3>
 
-                                            {(selectedLesson as any).scheduledAt && (
-                                                <div className="flex items-center justify-center gap-4 text-slate-300 mb-6">
-                                                    <div className="flex items-center gap-2">
-                                                        <Clock size={16} />
+                                                {(selectedLesson as any).scheduledAt && (
+                                                    <div className="flex items-center justify-center gap-4 text-slate-300 mb-6">
+                                                        <div className="flex items-center gap-2">
+                                                            <Clock size={16} />
+                                                            <span>
+                                                                {new Date((selectedLesson as any).scheduledAt).toLocaleDateString('en-US', {
+                                                                    weekday: 'long',
+                                                                    month: 'short',
+                                                                    day: 'numeric'
+                                                                })}
+                                                            </span>
+                                                        </div>
+                                                        <span>•</span>
                                                         <span>
-                                                            {new Date((selectedLesson as any).scheduledAt).toLocaleDateString('en-US', {
-                                                                weekday: 'long',
-                                                                month: 'short',
-                                                                day: 'numeric'
+                                                            {new Date((selectedLesson as any).scheduledAt).toLocaleTimeString('en-US', {
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
                                                             })}
                                                         </span>
                                                     </div>
-                                                    <span>•</span>
-                                                    <span>
-                                                        {new Date((selectedLesson as any).scheduledAt).toLocaleTimeString('en-US', {
-                                                            hour: '2-digit',
-                                                            minute: '2-digit'
-                                                        })}
-                                                    </span>
-                                                </div>
-                                            )}
+                                                )}
 
-                                            {(selectedLesson as any).liveClassUrl ? (
-                                                <a
-                                                    href={(selectedLesson as any).liveClassUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-lg shadow-blue-500/30"
-                                                >
-                                                    <Video size={24} />
-                                                    Join Zoom Meeting
-                                                </a>
-                                            ) : (
-                                                <div className="inline-flex items-center gap-3 px-8 py-4 bg-slate-700 text-slate-400 rounded-xl font-bold text-lg cursor-not-allowed">
-                                                    <Video size={24} />
-                                                    Meeting Link Coming Soon
-                                                </div>
-                                            )}
-
-                                            {/* Recording link if available */}
-                                            {(selectedLesson as any).recordingUrl && (
-                                                <div className="mt-6">
+                                                {(selectedLesson as any).zoomMeetingNumber ? (
+                                                    <button
+                                                        onClick={joinLiveClass}
+                                                        disabled={isJoiningZoom}
+                                                        className="inline-flex items-center gap-3 px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-lg shadow-green-500/30"
+                                                    >
+                                                        {isJoiningZoom ? <Loader2 size={24} className="animate-spin" /> : <Video size={24} />}
+                                                        {meetingStatus === 'started' ? 'Join Live Class' : 'Join Meeting Room'}
+                                                    </button>
+                                                ) : (selectedLesson as any).liveClassUrl ? (
                                                     <a
-                                                        href={(selectedLesson as any).recordingUrl}
+                                                        href={(selectedLesson as any).liveClassUrl}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-2 text-indigo-300 hover:text-indigo-200 transition-colors"
+                                                        className="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-lg shadow-blue-500/30"
                                                     >
-                                                        <Play size={16} />
-                                                        Watch Recording
+                                                        <Video size={24} />
+                                                        Join Zoom Meeting
                                                     </a>
-                                                </div>
-                                            )}
-                                        </div>
+                                                ) : (
+                                                    <div className="inline-flex items-center gap-3 px-8 py-4 bg-slate-700 text-slate-400 rounded-xl font-bold text-lg cursor-not-allowed">
+                                                        <Video size={24} />
+                                                        Meeting Link Coming Soon
+                                                    </div>
+                                                )}
+
+                                                {/* Recording link if available */}
+                                                {(selectedLesson as any).recordingUrl && (
+                                                    <div className="mt-6">
+                                                        <a
+                                                            href={(selectedLesson as any).recordingUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-2 text-indigo-300 hover:text-indigo-200 transition-colors"
+                                                        >
+                                                            <Play size={16} />
+                                                            Watch Recording
+                                                        </a>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )
                                     ) : selectedLesson.videoUrl || (selectedLesson as any).recordingUrl ? (
                                         /* Pre-recorded Video Mode */
                                         <div>
@@ -829,6 +1012,16 @@ export default function ClassroomPage() {
                     {activeTab === 'assignments' && (
                         <div className="max-w-4xl mx-auto">
                             <h2 className="text-2xl font-bold text-slate-900 mb-6">Assignments</h2>
+
+                            {/* Hidden file input */}
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)}
+                                className="hidden"
+                                accept=".pdf,.doc,.docx,.txt,.zip,.png,.jpg,.jpeg"
+                            />
+
                             {assignments.length === 0 ? (
                                 <div className="bg-white rounded-2xl p-12 text-center">
                                     <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
@@ -838,34 +1031,213 @@ export default function ClassroomPage() {
                             ) : (
                                 <div className="space-y-4">
                                     {assignments.map(assignment => (
-                                        <div key={assignment._id} className="bg-white rounded-2xl p-6 border border-slate-200">
-                                            <div className="flex items-start justify-between">
-                                                <div>
-                                                    <h3 className="font-bold text-slate-900">{assignment.title}</h3>
-                                                    <p className="text-slate-500 text-sm mt-1">{assignment.description}</p>
-                                                    {assignment.dueDate && (
-                                                        <p className="text-orange-600 text-sm mt-2 flex items-center gap-1">
-                                                            <Clock size={14} />
-                                                            Due: {new Date(assignment.dueDate).toLocaleDateString()}
-                                                        </p>
-                                                    )}
+                                        <div key={assignment._id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                                            {/* Assignment Header */}
+                                            <div className="p-6">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <h3 className="font-bold text-slate-900 text-lg">{assignment.title}</h3>
+                                                        <p className="text-slate-500 text-sm mt-1">{assignment.description}</p>
+                                                        <div className="flex items-center gap-4 mt-3">
+                                                            {assignment.dueDate && (
+                                                                <span className={`text-sm flex items-center gap-1 ${new Date(assignment.dueDate) < new Date() ? 'text-red-600' : 'text-orange-600'
+                                                                    }`}>
+                                                                    <Clock size={14} />
+                                                                    Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                                                                </span>
+                                                            )}
+                                                            <span className="text-sm text-slate-400">
+                                                                Max Grade: {assignment.maxGrade} pts
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-2">
+                                                        {assignment.submission?.status === 'graded' ? (
+                                                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">
+                                                                {assignment.submission.grade}/{assignment.maxGrade}
+                                                            </span>
+                                                        ) : assignment.submission ? (
+                                                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                                                                Submitted
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
+                                                                Pending
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    {assignment.submission?.status === 'graded' ? (
-                                                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                                                            {assignment.submission.grade}/{assignment.maxGrade}
-                                                        </span>
-                                                    ) : assignment.submission ? (
-                                                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                                                            Submitted
-                                                        </span>
-                                                    ) : (
-                                                        <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
-                                                            Pending
-                                                        </span>
-                                                    )}
-                                                </div>
+
+                                                {/* Show submitted work or feedback */}
+                                                {assignment.submission && (
+                                                    <div className="mt-4 p-4 bg-slate-50 rounded-xl">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <span className="text-sm font-medium text-slate-700">Your Submission</span>
+                                                            <span className="text-xs text-slate-400">
+                                                                {new Date(assignment.submission.submittedAt).toLocaleString()}
+                                                            </span>
+                                                        </div>
+                                                        {assignment.submission.fileUrl && (
+                                                            <a
+                                                                href={assignment.submission.fileUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700 text-sm"
+                                                            >
+                                                                <ExternalLink size={14} />
+                                                                {assignment.submission.fileName || 'View Submission'}
+                                                            </a>
+                                                        )}
+                                                        {assignment.submission.textContent && (
+                                                            <p className="text-sm text-slate-600 mt-2">{assignment.submission.textContent}</p>
+                                                        )}
+                                                        {assignment.submission.status === 'graded' && assignment.submission.feedback && (
+                                                            <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-100">
+                                                                <p className="text-sm font-medium text-green-700 mb-1">Instructor Feedback</p>
+                                                                <p className="text-sm text-green-600">{assignment.submission.feedback}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Submit button or resubmit */}
+                                                {!assignment.submission && (
+                                                    <button
+                                                        onClick={() => setSelectedAssignment(selectedAssignment?._id === assignment._id ? null : assignment)}
+                                                        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center gap-2 transition-colors"
+                                                    >
+                                                        <Upload size={16} />
+                                                        Submit Assignment
+                                                    </button>
+                                                )}
+                                                {assignment.submission && assignment.submission.status !== 'graded' && (
+                                                    <button
+                                                        onClick={() => setSelectedAssignment(selectedAssignment?._id === assignment._id ? null : assignment)}
+                                                        className="mt-4 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 flex items-center gap-2 transition-colors"
+                                                    >
+                                                        <Upload size={16} />
+                                                        Resubmit
+                                                    </button>
+                                                )}
                                             </div>
+
+                                            {/* Submission Form */}
+                                            {selectedAssignment?._id === assignment._id && (
+                                                <div className="border-t border-slate-200 p-6 bg-indigo-50">
+                                                    <h4 className="font-semibold text-slate-900 mb-4">Submit Your Work</h4>
+
+                                                    {/* Submission Type Tabs */}
+                                                    <div className="flex gap-2 mb-4">
+                                                        <button
+                                                            onClick={() => setSubmissionType('file')}
+                                                            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${submissionType === 'file'
+                                                                ? 'bg-indigo-600 text-white'
+                                                                : 'bg-white text-slate-600 hover:bg-slate-100'
+                                                                }`}
+                                                        >
+                                                            <Paperclip size={16} />
+                                                            File
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setSubmissionType('link')}
+                                                            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${submissionType === 'link'
+                                                                ? 'bg-indigo-600 text-white'
+                                                                : 'bg-white text-slate-600 hover:bg-slate-100'
+                                                                }`}
+                                                        >
+                                                            <LinkIcon size={16} />
+                                                            Link
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setSubmissionType('text')}
+                                                            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${submissionType === 'text'
+                                                                ? 'bg-indigo-600 text-white'
+                                                                : 'bg-white text-slate-600 hover:bg-slate-100'
+                                                                }`}
+                                                        >
+                                                            <FileText size={16} />
+                                                            Text
+                                                        </button>
+                                                    </div>
+
+                                                    {/* File Upload */}
+                                                    {submissionType === 'file' && (
+                                                        <div className="space-y-3">
+                                                            {submissionFile ? (
+                                                                <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Paperclip size={16} className="text-indigo-600" />
+                                                                        <span className="text-sm text-slate-700">{submissionFile.name}</span>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setSubmissionFile(null)}
+                                                                        className="text-red-500 hover:text-red-700"
+                                                                    >
+                                                                        <X size={16} />
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => fileInputRef.current?.click()}
+                                                                    className="w-full p-6 border-2 border-dashed border-slate-300 rounded-xl text-center hover:border-indigo-400 hover:bg-white transition-colors"
+                                                                >
+                                                                    <Upload size={24} className="mx-auto mb-2 text-slate-400" />
+                                                                    <p className="text-sm text-slate-600">Click to upload a file</p>
+                                                                    <p className="text-xs text-slate-400 mt-1">PDF, DOC, DOCX, TXT, ZIP, Images</p>
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Link Input */}
+                                                    {submissionType === 'link' && (
+                                                        <input
+                                                            type="url"
+                                                            value={submissionLink}
+                                                            onChange={(e) => setSubmissionLink(e.target.value)}
+                                                            placeholder="https://drive.google.com/..."
+                                                            className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                                        />
+                                                    )}
+
+                                                    {/* Text Input */}
+                                                    {submissionType === 'text' && (
+                                                        <textarea
+                                                            value={submissionText}
+                                                            onChange={(e) => setSubmissionText(e.target.value)}
+                                                            placeholder="Type your submission here..."
+                                                            className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 min-h-[120px]"
+                                                        />
+                                                    )}
+
+                                                    {/* Submit & Cancel Buttons */}
+                                                    <div className="flex items-center justify-end gap-3 mt-4">
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedAssignment(null);
+                                                                setSubmissionFile(null);
+                                                                setSubmissionLink('');
+                                                                setSubmissionText('');
+                                                            }}
+                                                            className="px-4 py-2 text-slate-600 hover:text-slate-800 text-sm font-medium"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        <button
+                                                            onClick={() => submitAssignment(assignment)}
+                                                            disabled={isSubmitting}
+                                                            className="px-6 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center gap-2 transition-colors disabled:opacity-50"
+                                                        >
+                                                            {isSubmitting ? (
+                                                                <Loader2 size={16} className="animate-spin" />
+                                                            ) : (
+                                                                <Send size={16} />
+                                                            )}
+                                                            Submit
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -985,6 +1357,15 @@ export default function ClassroomPage() {
                                                 <div className="flex-1">
                                                     <h3 className="font-bold text-slate-900">{announcement.title}</h3>
                                                     <p className="text-slate-600 mt-2">{announcement.content}</p>
+                                                    {announcement.imageUrl && (
+                                                        <div className="mt-4">
+                                                            <img
+                                                                src={announcement.imageUrl}
+                                                                alt={announcement.title}
+                                                                className="w-full max-w-lg h-auto rounded-xl border border-slate-200"
+                                                            />
+                                                        </div>
+                                                    )}
                                                     <div className="flex items-center gap-4 mt-4 text-sm text-slate-400">
                                                         <span>{announcement.authorName}</span>
                                                         <span>•</span>

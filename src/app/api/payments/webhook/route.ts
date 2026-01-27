@@ -43,25 +43,41 @@ async function handleSuccessfulPayment(data: any) {
     try {
         await dbConnect();
 
-        const { userId, courseSlug, courseName, amount } = data.metadata || {};
+        console.log('Processing successful payment:', JSON.stringify(data, null, 2));
+
+        const { userId, courseSlug, courseName } = data.metadata || {};
+        // Amount might be in data (e.g. data.amount, data.total_amount) or metadata if we put it there
+        // Dodo likely returns amount in the main data object
+        const amount = data.amount || data.total_amount || data.metadata?.amount || 0;
+        const paymentId = data.payment_id || data.id;
 
         if (!userId || !courseSlug) {
-            console.error('Missing metadata in payment');
+            console.error('Missing metadata in payment:', data);
             return;
         }
 
         // Update user's enrolled course as paid
-        await User.findByIdAndUpdate(userId, {
+        const result = await User.findByIdAndUpdate(userId, {
             $set: {
                 'enrolledCourses.$[elem].paid': true,
-                'enrolledCourses.$[elem].paymentId': data.payment_id,
-                'enrolledCourses.$[elem].amount': amount
+                'enrolledCourses.$[elem].paymentId': paymentId,
+                'enrolledCourses.$[elem].amount': amount,
+                'enrolledCourses.$[elem].paymentDate': new Date()
             }
         }, {
-            arrayFilters: [{ 'elem.courseSlug': courseSlug }]
+            arrayFilters: [{ 'elem.courseSlug': courseSlug }],
+            new: true
         });
 
-        console.log(`Payment successful for user ${userId}, course ${courseSlug}`);
+        if (!result) {
+            console.error(`User not found or course not found for user ${userId}, course ${courseSlug}`);
+            // Fallback: Add enrollment if it doesn't exist? 
+            // Ideally we shouldn't because enrollment happens at "pending" stage in the frontend
+            // But if they paid directly via link without enrolling first?
+            // For now assume they enrolled first.
+        } else {
+            console.log(`Payment confirmed for user ${userId}, course ${courseSlug}`);
+        }
 
     } catch (error) {
         console.error('Error processing successful payment:', error);

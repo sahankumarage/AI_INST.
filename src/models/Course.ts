@@ -10,9 +10,14 @@ export interface ILesson {
     duration?: string;
     // Live Class Support
     isLiveClass?: boolean;
-    liveClassUrl?: string; // Zoom/Meet link
+    liveClassUrl?: string; // Zoom link for instructor/fallback
+    zoomMeetingId?: string; // Zoom Meeting ID (string to avoid overflow)
+    zoomMeetingNumber?: string; // Numeric ID for joining
+    zoomPassword?: string;
+    meetingStatus?: 'scheduled' | 'active' | 'ended';
     scheduledAt?: Date;
     scheduledEndAt?: Date;
+    scheduledDuration?: number; // Duration in minutes
     // Resources
     resources?: { name: string; url: string }[];
     order: number;
@@ -64,8 +69,13 @@ const LessonSchema = new Schema({
     duration: { type: String },
     isLiveClass: { type: Boolean, default: false },
     liveClassUrl: { type: String },
+    zoomMeetingId: { type: String },
+    zoomMeetingNumber: { type: String },
+    zoomPassword: { type: String },
+    meetingStatus: { type: String, enum: ['scheduled', 'active', 'ended'], default: 'scheduled' },
     scheduledAt: { type: Date },
     scheduledEndAt: { type: Date },
+    scheduledDuration: { type: Number },
     resources: [{ name: String, url: String }],
     order: { type: Number, required: true }
 });

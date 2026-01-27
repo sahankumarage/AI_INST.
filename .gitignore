@@ -45,3 +45,7 @@ next-env.d.ts
 
 # raw flyers folder
 /flyers/
+
+# announcement uploads (user-uploaded images)
+/public/announcements/*
+!/public/announcements/.gitkeep

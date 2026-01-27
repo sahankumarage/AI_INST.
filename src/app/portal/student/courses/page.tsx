@@ -106,6 +106,44 @@ export default function StudentCoursesPage() {
         }
     };
 
+    // Verify Payment on Return
+    useEffect(() => {
+        const verifyPayment = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const paymentId = params.get('payment_id') || params.get('paymentId'); // Dodo usually sends payment_id
+            const enrolledStatus = params.get('enrolled');
+
+            if (enrolledStatus === 'success' && paymentId) {
+                const loadingId = alert.loading("Verifying Payment", "Please wait while we confirm your enrollment...");
+                try {
+                    const res = await fetch(`/api/payments/retrieve?paymentId=${paymentId}`);
+                    const data = await res.json();
+
+                    if (data.verified) {
+                        alert.success("Enrollment Confirmed", "Your payment was successful!");
+                        const userStr = localStorage.getItem("lms_user");
+                        if (userStr) {
+                            fetchEnrollments(JSON.parse(userStr).id);
+                        }
+                    } else if (data.status === 'pending') {
+                        alert.info("Payment Processing", "Your payment is still processing. Please check back soon.");
+                    } else {
+                        // Don't show error if it's just 'enrolled=success' without ID, but here we have ID
+                        // console.warn("Payment not verified:", data.status);
+                    }
+                } catch (error) {
+                    console.error("Verification error", error);
+                } finally {
+                    alert.dismissAlert(loadingId);
+                    // Clean up URL
+                    window.history.replaceState({}, '', window.location.pathname);
+                }
+            }
+        };
+
+        verifyPayment();
+    }, []);
+
     const enrolledCourses = courses.filter(c => c.progress < 100 || c.isPendingVerification);
     const completedCourses = courses.filter(c => c.progress >= 100 && !c.isPendingVerification);
 

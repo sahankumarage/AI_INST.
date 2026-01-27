@@ -18,7 +18,8 @@ export default function ClientLayout({
         "/portal",
         "/student-register",
         "/student-login",
-        "/lms"
+        "/lms",
+        "/meeting"
     ];
 
     // Check if current path starts with any hidden path

@@ -130,10 +130,22 @@ export async function GET(req: Request) {
                 averageGrade,
                 notesCount: notes.length
             },
-            assignments: assignments.map(a => ({
-                ...a.toObject(),
-                submission: submissions.find(s => s.assignmentId?.toString() === a._id.toString())
-            })),
+            assignments: assignments.map(a => {
+                const sub = submissions.find(s => s.assignmentId?.toString() === a._id.toString());
+                return {
+                    ...a.toObject(),
+                    submission: sub ? {
+                        _id: sub._id,
+                        status: sub.status,
+                        grade: sub.grade,
+                        feedback: sub.feedback,
+                        fileUrl: sub.fileUrl,
+                        fileName: sub.fileName,
+                        textContent: sub.textContent,
+                        submittedAt: sub.submittedAt
+                    } : undefined
+                };
+            }),
             notes,
             announcements
         });

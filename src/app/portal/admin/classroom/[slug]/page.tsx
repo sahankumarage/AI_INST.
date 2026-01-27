@@ -25,7 +25,8 @@ import {
     X,
     Bell,
     Pin,
-    Send
+    Send,
+    Image as ImageIcon
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -87,9 +88,44 @@ interface Announcement {
     _id: string;
     title: string;
     content: string;
+    imageUrl?: string;
     authorName: string;
     isPinned: boolean;
     createdAt: string;
+}
+
+interface Assignment {
+    _id: string;
+    courseSlug: string;
+    lessonId: string;
+    title: string;
+    description: string;
+    dueDate?: string;
+    maxGrade: number;
+    attachments?: { name: string; url: string }[];
+    allowLateSubmission: boolean;
+    totalSubmissions?: number;
+    gradedSubmissions?: number;
+    pendingSubmissions?: number;
+    createdAt: string;
+}
+
+interface Submission {
+    _id: string;
+    userId: string;
+    assignmentId: string;
+    courseSlug: string;
+    lessonId: string;
+    fileUrl?: string;
+    fileType?: string;
+    fileName?: string;
+    textContent?: string;
+    grade?: number;
+    feedback?: string;
+    gradedAt?: string;
+    status: 'pending' | 'submitted' | 'graded' | 'late';
+    submittedAt: string;
+    user?: { name: string; email: string };
 }
 
 type TabType = 'content' | 'live-classes' | 'assignments' | 'announcements' | 'settings';
@@ -115,13 +151,32 @@ export default function CourseContentPage() {
 
     // Announcements
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-    const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '', isPinned: false });
+    const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '', isPinned: false, imageUrl: '' });
+    const [announcementImageFile, setAnnouncementImageFile] = useState<File | null>(null);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const announcementImageInputRef = useRef<HTMLInputElement>(null);
     const [isCreatingAnnouncement, setIsCreatingAnnouncement] = useState(false);
+
+    // Assignments
+    const [assignments, setAssignments] = useState<Assignment[]>([]);
+    const [submissions, setSubmissions] = useState<Submission[]>([]);
+    const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+    const [isCreatingAssignment, setIsCreatingAssignment] = useState(false);
+    const [isGradingSubmission, setIsGradingSubmission] = useState<string | null>(null);
+    const [newAssignment, setNewAssignment] = useState({
+        lessonId: '',
+        title: '',
+        description: '',
+        dueDate: '',
+        maxGrade: 100,
+        allowLateSubmission: true
+    });
 
     useEffect(() => {
         if (slug) {
             fetchCourse();
             fetchAnnouncements();
+            fetchAssignments();
         }
     }, [slug]);
 
@@ -182,6 +237,110 @@ export default function CourseContentPage() {
             setAnnouncements(data.announcements || []);
         } catch (error) {
             console.error('Error fetching announcements:', error);
+        }
+    };
+
+    const fetchAssignments = async () => {
+        try {
+            const res = await fetch(`/api/admin/assignments?courseSlug=${slug}`);
+            const data = await res.json();
+            setAssignments(data.assignments || []);
+        } catch (error) {
+            console.error('Error fetching assignments:', error);
+        }
+    };
+
+    const fetchSubmissions = async (assignmentId: string) => {
+        try {
+            const res = await fetch(`/api/admin/submissions?assignmentId=${assignmentId}`);
+            const data = await res.json();
+            setSubmissions(data.submissions || []);
+        } catch (error) {
+            console.error('Error fetching submissions:', error);
+        }
+    };
+
+    const createAssignment = async () => {
+        if (!newAssignment.lessonId || !newAssignment.title || !newAssignment.description) {
+            alert.warning("Missing Fields", "Please fill in all required fields");
+            return;
+        }
+        setIsCreatingAssignment(true);
+        try {
+            const res = await fetch('/api/admin/assignments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    courseSlug: slug,
+                    ...newAssignment
+                })
+            });
+            if (res.ok) {
+                setNewAssignment({
+                    lessonId: '',
+                    title: '',
+                    description: '',
+                    dueDate: '',
+                    maxGrade: 100,
+                    allowLateSubmission: true
+                });
+                fetchAssignments();
+                alert.success("Assignment Created", "The assignment has been created successfully");
+            } else {
+                throw new Error('Failed to create assignment');
+            }
+        } catch (error) {
+            console.error('Error creating assignment:', error);
+            alert.error("Creation Failed", "Could not create assignment");
+        } finally {
+            setIsCreatingAssignment(false);
+        }
+    };
+
+    const gradeSubmission = async (submissionId: string, grade: number, feedback: string) => {
+        setIsGradingSubmission(submissionId);
+        try {
+            const res = await fetch('/api/admin/submissions', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    submissionId,
+                    grade,
+                    feedback,
+                    gradedBy: 'admin'
+                })
+            });
+            if (res.ok) {
+                if (selectedAssignment) {
+                    fetchSubmissions(selectedAssignment._id);
+                }
+                fetchAssignments();
+                alert.success("Graded", "Submission has been graded successfully");
+            } else {
+                throw new Error('Failed to grade submission');
+            }
+        } catch (error) {
+            console.error('Error grading submission:', error);
+            alert.error("Grading Failed", "Could not grade submission");
+        } finally {
+            setIsGradingSubmission(null);
+        }
+    };
+
+    const deleteAssignment = async (id: string) => {
+        try {
+            const res = await fetch(`/api/admin/assignments?id=${id}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                fetchAssignments();
+                setSelectedAssignment(null);
+                setSubmissions([]);
+                alert.success("Deleted", "Assignment has been deleted");
+            }
+        } catch (error) {
+            console.error('Error deleting assignment:', error);
+            alert.error("Delete Failed", "Could not delete assignment");
         }
     };
 
@@ -617,7 +776,27 @@ export default function CourseContentPage() {
                                                                     {lesson.isLiveClass ? (
                                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                                             <div>
-                                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Meeting URL (Zoom/Meet)</label>
+                                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Zoom Meeting ID (Required for Embedded View)</label>
+                                                                                <input
+                                                                                    type="text"
+                                                                                    value={(lesson as any).zoomMeetingNumber || ''}
+                                                                                    onChange={(e) => updateLesson(module.id, lesson.id, { zoomMeetingNumber: e.target.value } as any)}
+                                                                                    placeholder="123 456 7890"
+                                                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Zoom Password (Optional)</label>
+                                                                                <input
+                                                                                    type="text"
+                                                                                    value={(lesson as any).zoomPassword || ''}
+                                                                                    onChange={(e) => updateLesson(module.id, lesson.id, { zoomPassword: e.target.value } as any)}
+                                                                                    placeholder="Meeting Passcode"
+                                                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Meeting URL (External Link Fallback)</label>
                                                                                 <input
                                                                                     type="url"
                                                                                     value={lesson.liveClassUrl || ''}
@@ -640,7 +819,7 @@ export default function CourseContentPage() {
                                                                                 <label className="block text-xs font-medium text-slate-500 mb-1">Scheduled Start</label>
                                                                                 <input
                                                                                     type="datetime-local"
-                                                                                    value={lesson.scheduledAt ? new Date(lesson.scheduledAt).toISOString().slice(0, 16) : ''}
+                                                                                    value={formatDateForInput(lesson.scheduledAt)}
                                                                                     onChange={(e) => updateLesson(module.id, lesson.id, { scheduledAt: e.target.value })}
                                                                                     className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200"
                                                                                 />
@@ -649,7 +828,7 @@ export default function CourseContentPage() {
                                                                                 <label className="block text-xs font-medium text-slate-500 mb-1">Scheduled End</label>
                                                                                 <input
                                                                                     type="datetime-local"
-                                                                                    value={lesson.scheduledEndAt ? new Date(lesson.scheduledEndAt).toISOString().slice(0, 16) : ''}
+                                                                                    value={formatDateForInput(lesson.scheduledEndAt)}
                                                                                     onChange={(e) => updateLesson(module.id, lesson.id, { scheduledEndAt: e.target.value })}
                                                                                     className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200"
                                                                                 />
@@ -902,6 +1081,97 @@ export default function CourseContentPage() {
                                 onChange={(e) => setNewAnnouncement({ ...newAnnouncement, content: e.target.value })}
                                 className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 min-h-[100px] resize-y"
                             />
+
+                            {/* Image Upload */}
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-slate-700">Attach Image (optional)</label>
+                                <input
+                                    ref={announcementImageInputRef}
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/gif,image/webp"
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+
+                                        // Validate file size (5MB max)
+                                        if (file.size > 5 * 1024 * 1024) {
+                                            alert.error("File Too Large", "Image size must be less than 5MB");
+                                            return;
+                                        }
+
+                                        setAnnouncementImageFile(file);
+                                        setIsUploadingImage(true);
+
+                                        try {
+                                            const formData = new FormData();
+                                            formData.append('file', file);
+                                            formData.append('folder', 'announcements');
+
+                                            const res = await fetch('/api/upload', {
+                                                method: 'POST',
+                                                body: formData
+                                            });
+
+                                            if (res.ok) {
+                                                const data = await res.json();
+                                                setNewAnnouncement({ ...newAnnouncement, imageUrl: data.url });
+                                                alert.success("Image Uploaded", "Image has been uploaded successfully");
+                                            } else {
+                                                throw new Error('Upload failed');
+                                            }
+                                        } catch (error) {
+                                            console.error('Image upload error:', error);
+                                            alert.error("Upload Failed", "Could not upload image");
+                                            setAnnouncementImageFile(null);
+                                        } finally {
+                                            setIsUploadingImage(false);
+                                        }
+                                    }}
+                                    className="hidden"
+                                />
+
+                                {/* Image Preview or Upload Button */}
+                                {newAnnouncement.imageUrl ? (
+                                    <div className="relative w-full max-w-md">
+                                        <img
+                                            src={newAnnouncement.imageUrl}
+                                            alt="Announcement preview"
+                                            className="w-full h-48 object-cover rounded-xl border border-slate-200"
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                setNewAnnouncement({ ...newAnnouncement, imageUrl: '' });
+                                                setAnnouncementImageFile(null);
+                                                if (announcementImageInputRef.current) {
+                                                    announcementImageInputRef.current.value = '';
+                                                }
+                                            }}
+                                            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => announcementImageInputRef.current?.click()}
+                                        disabled={isUploadingImage}
+                                        className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors disabled:opacity-50"
+                                    >
+                                        {isUploadingImage ? (
+                                            <>
+                                                <Loader2 size={18} className="animate-spin" />
+                                                Uploading...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ImageIcon size={18} />
+                                                Add Image
+                                            </>
+                                        )}
+                                    </button>
+                                )}
+                            </div>
+
                             <div className="flex items-center justify-between">
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
@@ -928,13 +1198,18 @@ export default function CourseContentPage() {
                                                     courseSlug: slug,
                                                     title: newAnnouncement.title,
                                                     content: newAnnouncement.content,
+                                                    imageUrl: newAnnouncement.imageUrl || null,
                                                     isPinned: newAnnouncement.isPinned,
                                                     authorId: 'admin', // This should come from session
                                                     authorName: 'Admin'
                                                 })
                                             });
                                             if (res.ok) {
-                                                setNewAnnouncement({ title: '', content: '', isPinned: false });
+                                                setNewAnnouncement({ title: '', content: '', isPinned: false, imageUrl: '' });
+                                                setAnnouncementImageFile(null);
+                                                if (announcementImageInputRef.current) {
+                                                    announcementImageInputRef.current.value = '';
+                                                }
                                                 fetchAnnouncements();
                                                 alert.success("Announcement Created", "Your announcement has been posted");
                                             } else {
@@ -947,7 +1222,7 @@ export default function CourseContentPage() {
                                             setIsCreatingAnnouncement(false);
                                         }
                                     }}
-                                    disabled={isCreatingAnnouncement}
+                                    disabled={isCreatingAnnouncement || isUploadingImage}
                                     className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 flex items-center gap-2 transition-colors disabled:opacity-50"
                                 >
                                     {isCreatingAnnouncement ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
@@ -980,6 +1255,15 @@ export default function CourseContentPage() {
                                                     <h4 className="font-semibold text-slate-900">{announcement.title}</h4>
                                                 </div>
                                                 <p className="text-slate-600 text-sm mb-2">{announcement.content}</p>
+                                                {announcement.imageUrl && (
+                                                    <div className="mb-3">
+                                                        <img
+                                                            src={announcement.imageUrl}
+                                                            alt={announcement.title}
+                                                            className="max-w-md w-full h-48 object-cover rounded-xl border border-slate-200"
+                                                        />
+                                                    </div>
+                                                )}
                                                 <p className="text-xs text-slate-400">
                                                     Posted by {announcement.authorName} • {new Date(announcement.createdAt).toLocaleDateString()}
                                                 </p>
@@ -1046,12 +1330,277 @@ export default function CourseContentPage() {
 
             {/* Assignments Tab */}
             {activeTab === 'assignments' && (
-                <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-                    <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">Assignments Coming Soon</h3>
-                    <p className="text-slate-500 max-w-md mx-auto">
-                        The assignments feature is under development. You'll be able to create, manage, and grade assignments here.
-                    </p>
+                <div className="space-y-6">
+                    {/* Create New Assignment */}
+                    <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                        <h3 className="text-lg font-bold text-slate-900 mb-4">Create New Assignment</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Lesson</label>
+                                <select
+                                    value={newAssignment.lessonId}
+                                    onChange={(e) => setNewAssignment({ ...newAssignment, lessonId: e.target.value })}
+                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                >
+                                    <option value="">Select a lesson...</option>
+                                    {course?.modules.map((module) => (
+                                        <optgroup key={module.id} label={module.title}>
+                                            {module.lessons.map((lesson) => (
+                                                <option key={lesson.id} value={lesson.id}>
+                                                    {lesson.title}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                                <input
+                                    type="text"
+                                    value={newAssignment.title}
+                                    onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })}
+                                    placeholder="Assignment title..."
+                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                                <textarea
+                                    value={newAssignment.description}
+                                    onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })}
+                                    placeholder="Assignment instructions..."
+                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 min-h-[80px]"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Due Date</label>
+                                <input
+                                    type="datetime-local"
+                                    value={newAssignment.dueDate}
+                                    onChange={(e) => setNewAssignment({ ...newAssignment, dueDate: e.target.value })}
+                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Max Grade</label>
+                                <input
+                                    type="number"
+                                    value={newAssignment.maxGrade}
+                                    onChange={(e) => setNewAssignment({ ...newAssignment, maxGrade: Number(e.target.value) })}
+                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="allowLate"
+                                    checked={newAssignment.allowLateSubmission}
+                                    onChange={(e) => setNewAssignment({ ...newAssignment, allowLateSubmission: e.target.checked })}
+                                    className="w-4 h-4 text-indigo-600 border-slate-300 rounded"
+                                />
+                                <label htmlFor="allowLate" className="text-sm text-slate-600">Allow late submissions</label>
+                            </div>
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={createAssignment}
+                                    disabled={isCreatingAssignment}
+                                    className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 flex items-center gap-2 transition-colors disabled:opacity-50"
+                                >
+                                    {isCreatingAssignment ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+                                    Create Assignment
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Assignment List */}
+                        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                            <div className="p-4 border-b border-slate-200">
+                                <h3 className="font-semibold text-slate-900">All Assignments ({assignments.length})</h3>
+                            </div>
+                            {assignments.length === 0 ? (
+                                <div className="p-12 text-center">
+                                    <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                    <p className="text-slate-500">No assignments yet. Create one above!</p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
+                                    {assignments.map((assignment) => (
+                                        <div
+                                            key={assignment._id}
+                                            onClick={() => {
+                                                setSelectedAssignment(assignment);
+                                                fetchSubmissions(assignment._id);
+                                            }}
+                                            className={`p-4 cursor-pointer transition-colors ${selectedAssignment?._id === assignment._id
+                                                ? 'bg-indigo-50 border-l-4 border-indigo-600'
+                                                : 'hover:bg-slate-50'
+                                                }`}
+                                        >
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex-1">
+                                                    <h4 className="font-medium text-slate-900">{assignment.title}</h4>
+                                                    <p className="text-sm text-slate-500 mt-1 line-clamp-2">{assignment.description}</p>
+                                                    <div className="flex items-center gap-4 mt-2 text-xs">
+                                                        {assignment.dueDate && (
+                                                            <span className="text-orange-600 flex items-center gap-1">
+                                                                <Clock size={12} />
+                                                                Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                                                            </span>
+                                                        )}
+                                                        <span className="text-slate-400">Max: {assignment.maxGrade} pts</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col items-end gap-1">
+                                                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                                                        {assignment.totalSubmissions || 0} submitted
+                                                    </span>
+                                                    {(assignment.pendingSubmissions || 0) > 0 && (
+                                                        <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded">
+                                                            {assignment.pendingSubmissions} pending
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Submissions Panel */}
+                        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+                                <h3 className="font-semibold text-slate-900">
+                                    {selectedAssignment ? `Submissions: ${selectedAssignment.title}` : 'Select an Assignment'}
+                                </h3>
+                                {selectedAssignment && (
+                                    <button
+                                        onClick={() => {
+                                            showConfirm({
+                                                title: "Delete Assignment",
+                                                message: `Are you sure you want to delete "${selectedAssignment.title}"? This will also delete all submissions.`,
+                                                type: "delete",
+                                                confirmLabel: "Delete",
+                                                onConfirm: () => deleteAssignment(selectedAssignment._id)
+                                            });
+                                        }}
+                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                )}
+                            </div>
+                            {!selectedAssignment ? (
+                                <div className="p-12 text-center">
+                                    <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                    <p className="text-slate-500">Click on an assignment to view submissions</p>
+                                </div>
+                            ) : submissions.length === 0 ? (
+                                <div className="p-12 text-center">
+                                    <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                    <p className="text-slate-500">No submissions yet</p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
+                                    {submissions.map((submission) => (
+                                        <div key={submission._id} className="p-4">
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div>
+                                                    <h4 className="font-medium text-slate-900">{submission.user?.name || 'Unknown Student'}</h4>
+                                                    <p className="text-sm text-slate-500">{submission.user?.email}</p>
+                                                    <p className="text-xs text-slate-400 mt-1">
+                                                        Submitted: {new Date(submission.submittedAt).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                                <span className={`px-2 py-1 text-xs font-medium rounded ${submission.status === 'graded' ? 'bg-green-100 text-green-700' :
+                                                    submission.status === 'late' ? 'bg-orange-100 text-orange-700' :
+                                                        'bg-blue-100 text-blue-700'
+                                                    }`}>
+                                                    {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
+                                                </span>
+                                            </div>
+
+                                            {/* Submission content */}
+                                            {submission.fileUrl && (
+                                                <a
+                                                    href={submission.fileUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-sm text-indigo-600 hover:bg-slate-100 mb-3"
+                                                >
+                                                    <ExternalLink size={14} />
+                                                    {submission.fileName || 'View Attachment'}
+                                                </a>
+                                            )}
+                                            {submission.textContent && (
+                                                <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-600 mb-3">
+                                                    {submission.textContent}
+                                                </div>
+                                            )}
+
+                                            {/* Grading Form */}
+                                            {submission.status === 'graded' ? (
+                                                <div className="p-3 bg-green-50 rounded-lg">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <span className="text-sm font-medium text-green-700">Grade</span>
+                                                        <span className="text-lg font-bold text-green-700">
+                                                            {submission.grade}/{selectedAssignment.maxGrade}
+                                                        </span>
+                                                    </div>
+                                                    {submission.feedback && (
+                                                        <p className="text-sm text-green-600">{submission.feedback}</p>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="number"
+                                                            id={`grade-${submission._id}`}
+                                                            placeholder="Grade"
+                                                            max={selectedAssignment.maxGrade}
+                                                            min={0}
+                                                            className="w-24 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                                        />
+                                                        <span className="text-sm text-slate-500">/ {selectedAssignment.maxGrade}</span>
+                                                    </div>
+                                                    <textarea
+                                                        id={`feedback-${submission._id}`}
+                                                        placeholder="Feedback (optional)..."
+                                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 min-h-[60px]"
+                                                    />
+                                                    <button
+                                                        onClick={() => {
+                                                            const gradeInput = document.getElementById(`grade-${submission._id}`) as HTMLInputElement;
+                                                            const feedbackInput = document.getElementById(`feedback-${submission._id}`) as HTMLTextAreaElement;
+                                                            const grade = Number(gradeInput.value);
+                                                            if (isNaN(grade) || grade < 0 || grade > selectedAssignment.maxGrade) {
+                                                                alert.warning("Invalid Grade", `Grade must be between 0 and ${selectedAssignment.maxGrade}`);
+                                                                return;
+                                                            }
+                                                            gradeSubmission(submission._id, grade, feedbackInput.value);
+                                                        }}
+                                                        disabled={isGradingSubmission === submission._id}
+                                                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg font-medium hover:bg-green-700 flex items-center gap-2 transition-colors disabled:opacity-50"
+                                                    >
+                                                        {isGradingSubmission === submission._id ? (
+                                                            <Loader2 size={14} className="animate-spin" />
+                                                        ) : (
+                                                            <Save size={14} />
+                                                        )}
+                                                        Save Grade
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
 

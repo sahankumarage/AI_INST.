@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import User from '@/models/User';
+import DodoPayments from 'dodopayments';
 
-const DODO_API_KEY = process.env.DODO_PAYMENTS_API_KEY;
-const DODO_PAYMENT_LINK = process.env.DODO_PAYMENT_LINK;
+const client = new DodoPayments({
+    bearerToken: process.env.DODO_PAYMENTS_API_KEY,
+    environment: 'test_mode', // Defaults to 'live_mode'
+});
 
 export async function POST(req: Request) {
     try {
         const { userId, courseSlug, courseName, amount, successUrl, cancelUrl } = await req.json();
 
-        if (!DODO_API_KEY) {
+        if (!process.env.DODO_PAYMENTS_API_KEY) {
             return NextResponse.json(
                 { message: 'Dodo Payments is not configured' },
                 { status: 500 }
@@ -17,44 +18,37 @@ export async function POST(req: Request) {
         }
 
         // Create Dodo Payment session
-        // This is a simplified example - adjust based on Dodo's actual API
-        const paymentData = {
-            amount: amount * 100, // Convert to cents if needed
-            currency: 'USD',
+        const session = await client.payments.create({
+            billing: {
+                city: 'New York',
+                country: 'US',
+                state: 'NY',
+                street: '123 Main St',
+                zipcode: '10001',
+            },
+            customer: {
+                email: 'customer@example.com', // In a real app, this should come from user profile
+                name: 'John Doe', // Should come from user profile
+            },
+            product_cart: [
+                {
+                    product_id: process.env.DODO_PRODUCT_ID || 'pdt_0NWZJ1b1yj2ve5zyDswrE', // Use env var or dynamic ID
+                    quantity: 1,
+                    amount: amount * 100, // Amount in lowest denomination (cents)
+                },
+            ],
+            payment_link: true,
+            return_url: successUrl || `${process.env.NEXT_PUBLIC_APP_URL}/portal/student?payment=success`,
             metadata: {
                 userId,
                 courseSlug,
                 courseName
-            },
-            success_url: successUrl || `${process.env.NEXT_PUBLIC_APP_URL}/portal/student?payment=success`,
-            cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/courses/${courseSlug}?payment=cancelled`
-        };
-
-        // If using Dodo payment link approach
-        if (DODO_PAYMENT_LINK) {
-            const paymentUrl = `${DODO_PAYMENT_LINK}?amount=${amount}&user_id=${userId}&course=${courseSlug}`;
-            return NextResponse.json({ paymentUrl });
-        }
-
-        // Or create a checkout session via API
-        const response = await fetch('https://api.dodopayments.com/v1/checkout/sessions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${DODO_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(paymentData)
+            }
         });
 
-        if (!response.ok) {
-            throw new Error('Failed to create payment session');
-        }
-
-        const session = await response.json();
-
         return NextResponse.json({
-            paymentUrl: session.url,
-            sessionId: session.id
+            paymentUrl: session.payment_link,
+            sessionId: session.payment_id
         });
 
     } catch (error: any) {

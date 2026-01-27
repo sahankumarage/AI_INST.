@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     try {
         await dbConnect();
 
-        const { courseSlug, title, content, authorId, authorName, isPinned } = await req.json();
+        const { courseSlug, title, content, imageUrl, authorId, authorName, isPinned } = await req.json();
 
         if (!courseSlug || !title || !content || !authorId || !authorName) {
             return NextResponse.json(
@@ -45,6 +45,7 @@ export async function POST(req: Request) {
             courseSlug,
             title,
             content,
+            imageUrl: imageUrl || null,
             authorId,
             authorName,
             isPinned: isPinned || false
