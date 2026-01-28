@@ -49,3 +49,6 @@ next-env.d.ts
 # announcement uploads (user-uploaded images)
 /public/announcements/*
 !/public/announcements/.gitkeep
+
+# generated course covers
+/public/courses/ai-driven-web-dev-cover.png

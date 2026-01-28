@@ -15,7 +15,7 @@ const courses = [
         duration: "8 Weeks",
         rating: 4.9,
         category: "Hands-On",
-        price: "$299",
+        price: "LKR 15,000",
         gradient: "from-indigo-600 via-violet-600 to-purple-600",
         icon: <Code className="w-6 h-6" />
     },
@@ -27,7 +27,7 @@ const courses = [
         duration: "4 Weeks",
         rating: 4.8,
         category: "Foundation",
-        price: "$199",
+        price: "LKR 10,000",
         gradient: "from-blue-500 via-cyan-500 to-teal-400",
         icon: <BookOpen className="w-6 h-6" />
     },
@@ -39,7 +39,7 @@ const courses = [
         duration: "4 Weeks",
         rating: 4.8,
         category: "Creative",
-        price: "$249",
+        price: "LKR 10,000",
         gradient: "from-rose-500 via-pink-500 to-orange-400",
         icon: <Sparkles className="w-6 h-6" />
     },
@@ -51,7 +51,7 @@ const courses = [
         duration: "12 Weeks",
         rating: 5.0,
         category: "Technical",
-        price: "$499",
+        price: "LKR 25,000",
         gradient: "from-emerald-500 to-teal-600",
         icon: <Zap className="w-6 h-6" />
     },
@@ -123,8 +123,8 @@ export default function CoursesPage() {
                                                 key={cat}
                                                 onClick={() => setSelectedCategory(cat)}
                                                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${selectedCategory === cat
-                                                        ? "bg-indigo-50 text-indigo-700 font-medium"
-                                                        : "text-slate-600 hover:bg-slate-100"
+                                                    ? "bg-indigo-50 text-indigo-700 font-medium"
+                                                    : "text-slate-600 hover:bg-slate-100"
                                                     }`}
                                             >
                                                 {cat}
@@ -144,8 +144,8 @@ export default function CoursesPage() {
                                                 key={level}
                                                 onClick={() => setSelectedLevel(level)}
                                                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${selectedLevel === level
-                                                        ? "bg-indigo-50 text-indigo-700 font-medium"
-                                                        : "text-slate-600 hover:bg-slate-100"
+                                                    ? "bg-indigo-50 text-indigo-700 font-medium"
+                                                    : "text-slate-600 hover:bg-slate-100"
                                                     }`}
                                             >
                                                 {level}
@@ -197,8 +197,8 @@ export default function CoursesPage() {
                                                         key={cat}
                                                         onClick={() => setSelectedCategory(cat)}
                                                         className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${selectedCategory === cat
-                                                                ? "bg-indigo-600 text-white"
-                                                                : "bg-slate-100 text-slate-600"
+                                                            ? "bg-indigo-600 text-white"
+                                                            : "bg-slate-100 text-slate-600"
                                                             }`}
                                                     >
                                                         {cat}
@@ -214,8 +214,8 @@ export default function CoursesPage() {
                                                         key={level}
                                                         onClick={() => setSelectedLevel(level)}
                                                         className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${selectedLevel === level
-                                                                ? "bg-indigo-600 text-white"
-                                                                : "bg-slate-100 text-slate-600"
+                                                            ? "bg-indigo-600 text-white"
+                                                            : "bg-slate-100 text-slate-600"
                                                             }`}
                                                     >
                                                         {level}

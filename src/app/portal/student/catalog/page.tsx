@@ -216,22 +216,35 @@ export default function StudentCatalogPage() {
                                 >
                                     <div className="group h-full block">
                                         <div className="h-full bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-100 transition-all duration-300 flex flex-col">
-                                            {/* Card Header with Gradient */}
-                                            <div className={`h-2 bg-gradient-to-r ${course.gradient || 'from-indigo-500 to-purple-500'}`} />
-
-                                            <div className="p-6 md:p-8 flex-1 flex flex-col">
-                                                <div className="flex justify-between items-start mb-6">
-                                                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${course.gradient || 'from-indigo-500 to-purple-500'} flex items-center justify-center text-white shadow-lg`}>
-                                                        {course.icon || <BookOpen className="w-6 h-6" />}
+                                            {/* Card Header / Thumbnail */}
+                                            <div className="relative h-48 w-full overflow-hidden bg-slate-100">
+                                                {course.thumbnail ? (
+                                                    <img
+                                                        src={course.thumbnail}
+                                                        alt={course.title}
+                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                    />
+                                                ) : (
+                                                    <div className={`w-full h-full bg-gradient-to-br ${course.gradient || 'from-indigo-500 to-purple-500'} flex items-center justify-center`}>
+                                                        {course.icon || <BookOpen className="w-16 h-16 text-white/30" />}
                                                     </div>
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide
-                                                        ${course.level === 'Beginner' ? 'bg-emerald-100 text-emerald-700' :
-                                                            course.level === 'Advanced' ? 'bg-rose-100 text-rose-700' :
-                                                                'bg-amber-100 text-amber-700'}`}>
+                                                )}
+
+                                                {/* Overlay Gradient */}
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
+
+                                                {/* Level Badge */}
+                                                <div className="absolute top-4 right-4">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide backdrop-blur-md shadow-sm border border-white/20
+                                                        ${course.level === 'Beginner' ? 'bg-white/90 text-emerald-700' :
+                                                            course.level === 'Advanced' ? 'bg-white/90 text-rose-700' :
+                                                                'bg-white/90 text-amber-700'}`}>
                                                         {course.level}
                                                     </span>
                                                 </div>
+                                            </div>
 
+                                            <div className="p-6 flex-1 flex flex-col">
                                                 <h2 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors line-clamp-2">
                                                     {course.title}
                                                 </h2>
@@ -254,7 +267,7 @@ export default function StudentCatalogPage() {
 
                                                     <div className="flex items-center justify-between pt-6 border-t border-slate-100 mb-4">
                                                         <div className="text-lg font-bold text-slate-900">
-                                                            ${course.price || 199}
+                                                            LKR {course.price?.toLocaleString() || '15,000'}
                                                         </div>
                                                     </div>
 

@@ -296,14 +296,8 @@ export default function AdminCoursesPage() {
                 <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
                     <Database className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                     <h3 className="text-lg font-bold text-slate-900 mb-2">No Courses Yet</h3>
-                    <p className="text-slate-500 mb-6">Get started by seeding the database with sample courses or create your first course.</p>
-                    <button
-                        onClick={handleSeed}
-                        disabled={isSeeding}
-                        className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors"
-                    >
-                        Seed Sample Courses
-                    </button>
+                    <p className="text-slate-500 mb-6">Get started by creating your first course.</p>
+
                 </div>
             )}
 
@@ -345,8 +339,7 @@ export default function AdminCoursesPage() {
                                         {course.enrolledCount || 0}
                                     </span>
                                     <span className="flex items-center gap-1">
-                                        <DollarSign size={14} />
-                                        ${course.price}
+                                        LKR {course.price.toLocaleString()}
                                     </span>
                                     <span className="px-2 py-0.5 bg-slate-100 rounded text-xs">
                                         {course.level}
@@ -490,7 +483,7 @@ export default function AdminCoursesPage() {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Price ($)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Price (LKR)</label>
                                         <input
                                             type="number"
                                             required
