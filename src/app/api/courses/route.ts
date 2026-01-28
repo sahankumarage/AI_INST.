@@ -12,9 +12,9 @@ export async function GET(req: Request) {
         const slug = searchParams.get('slug');
         const includeDrafts = searchParams.get('includeDrafts') === 'true';
 
-        // If slug is provided, return single course
+        // If slug is provided, return single course (exclude deleted)
         if (slug) {
-            const course = await Course.findOne({ slug });
+            const course = await Course.findOne({ slug, isDeleted: { $ne: true } });
             if (!course) {
                 return NextResponse.json(
                     { message: 'Course not found' },
@@ -24,8 +24,11 @@ export async function GET(req: Request) {
             return NextResponse.json({ course });
         }
 
-        // Return all courses (optionally filter by published)
-        const query = includeDrafts ? {} : { isPublished: true };
+        // Return all courses (optionally filter by published, exclude deleted)
+        const query: any = { isDeleted: { $ne: true } };
+        if (!includeDrafts) {
+            query.isPublished = true;
+        }
         const courses = await Course.find(query).sort({ createdAt: -1 });
 
         return NextResponse.json({ courses });

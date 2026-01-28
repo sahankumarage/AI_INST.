@@ -8,16 +8,16 @@ export async function GET(req: Request) {
     try {
         await dbConnect();
 
-        // Get total students
-        const totalStudents = await User.countDocuments({ role: 'student' });
+        // Get total students (excluding soft-deleted)
+        const totalStudents = await User.countDocuments({ role: 'student', isDeleted: { $ne: true } });
 
-        // Get total courses
-        const totalCourses = await Course.countDocuments({});
-        const publishedCourses = await Course.countDocuments({ isPublished: true });
+        // Get total courses (excluding soft-deleted)
+        const totalCourses = await Course.countDocuments({ isDeleted: { $ne: true } });
+        const publishedCourses = await Course.countDocuments({ isPublished: true, isDeleted: { $ne: true } });
 
-        // Get total enrollments
+        // Get total enrollments (excluding soft-deleted students)
         const enrollmentData = await User.aggregate([
-            { $match: { role: 'student' } },
+            { $match: { role: 'student', isDeleted: { $ne: true } } },
             { $unwind: { path: '$enrolledCourses', preserveNullAndEmptyArrays: true } },
             { $group: { _id: null, totalEnrollments: { $sum: 1 }, paidEnrollments: { $sum: { $cond: ['$enrolledCourses.paid', 1, 0] } } } }
         ]);
@@ -25,26 +25,27 @@ export async function GET(req: Request) {
         const totalEnrollments = enrollmentData[0]?.totalEnrollments || 0;
         const paidEnrollments = enrollmentData[0]?.paidEnrollments || 0;
 
-        // Get recent students (last 7 days)
+        // Get recent students (last 7 days, excluding soft-deleted)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         const newStudentsThisWeek = await User.countDocuments({
             role: 'student',
+            isDeleted: { $ne: true },
             createdAt: { $gte: sevenDaysAgo }
         });
 
-        // Get revenue (sum of paid enrollment amounts)
+        // Get revenue (sum of paid enrollment amounts, excluding soft-deleted students)
         const revenueData = await User.aggregate([
-            { $match: { role: 'student' } },
+            { $match: { role: 'student', isDeleted: { $ne: true } } },
             { $unwind: '$enrolledCourses' },
             { $match: { 'enrolledCourses.paid': true } },
             { $group: { _id: null, totalRevenue: { $sum: '$enrolledCourses.amount' } } }
         ]);
         const totalRevenue = revenueData[0]?.totalRevenue || 0;
 
-        // Get recent enrollments
+        // Get recent enrollments (excluding soft-deleted students)
         const recentEnrollments = await User.aggregate([
-            { $match: { role: 'student' } },
+            { $match: { role: 'student', isDeleted: { $ne: true } } },
             { $unwind: '$enrolledCourses' },
             { $sort: { 'enrolledCourses.enrolledAt': -1 } },
             { $limit: 5 },
@@ -60,8 +61,8 @@ export async function GET(req: Request) {
             }
         ]);
 
-        // Get popular courses by enrollment count
-        const popularCourses = await Course.find({})
+        // Get popular courses by enrollment count (excluding soft-deleted)
+        const popularCourses = await Course.find({ isDeleted: { $ne: true } })
             .sort({ enrolledCount: -1 })
             .limit(5)
             .select('title slug enrolledCount rating price');

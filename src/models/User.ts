@@ -21,6 +21,8 @@ export interface IUser extends Document {
     avatar?: string;
     phone?: string;
     enrolledCourses: IEnrolledCourse[];
+    isDeleted?: boolean;
+    deletedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -68,8 +70,17 @@ const UserSchema = new Schema<IUser>({
     avatar: { type: String },
     phone: { type: String },
     enrolledCourses: [EnrolledCourseSchema],
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date },
 }, {
     timestamps: true,
 });
 
+// Prevent Mongoose OverwriteModelError while allowing schema updates in dev
+if (process.env.NODE_ENV !== 'production') {
+    delete mongoose.models.User;
+}
+
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+
+

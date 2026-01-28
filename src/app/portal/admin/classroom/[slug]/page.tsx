@@ -776,27 +776,7 @@ export default function CourseContentPage() {
                                                                     {lesson.isLiveClass ? (
                                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                                             <div>
-                                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Zoom Meeting ID (Required for Embedded View)</label>
-                                                                                <input
-                                                                                    type="text"
-                                                                                    value={(lesson as any).zoomMeetingNumber || ''}
-                                                                                    onChange={(e) => updateLesson(module.id, lesson.id, { zoomMeetingNumber: e.target.value } as any)}
-                                                                                    placeholder="123 456 7890"
-                                                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                                                                                />
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Zoom Password (Optional)</label>
-                                                                                <input
-                                                                                    type="text"
-                                                                                    value={(lesson as any).zoomPassword || ''}
-                                                                                    onChange={(e) => updateLesson(module.id, lesson.id, { zoomPassword: e.target.value } as any)}
-                                                                                    placeholder="Meeting Passcode"
-                                                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                                                                                />
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Meeting URL (External Link Fallback)</label>
+                                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Meeting URL (Zoom/Google Meet)</label>
                                                                                 <input
                                                                                     type="url"
                                                                                     value={lesson.liveClassUrl || ''}

@@ -76,7 +76,8 @@ export async function GET(req: Request) {
     try {
         await dbConnect();
 
-        const users = await User.find({}).select('email role firstName lastName createdAt');
+        // Filter out soft-deleted users
+        const users = await User.find({ isDeleted: { $ne: true } }).select('email role firstName lastName createdAt');
 
         return NextResponse.json({
             users: users.map(u => ({

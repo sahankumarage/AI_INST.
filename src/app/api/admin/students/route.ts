@@ -7,7 +7,8 @@ export async function GET(req: Request) {
     try {
         await dbConnect();
 
-        const students = await User.find({ role: 'student' })
+        // Filter out soft-deleted students
+        const students = await User.find({ role: 'student', isDeleted: { $ne: true } })
             .select('-password')
             .sort({ createdAt: -1 });
 
@@ -50,13 +51,15 @@ export async function GET(req: Request) {
     }
 }
 
-// DELETE a student
+// DELETE a student (soft delete)
 export async function DELETE(req: Request) {
     try {
         await dbConnect();
 
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
+
+        console.log('Delete request for student ID:', id);
 
         if (!id) {
             return NextResponse.json(
@@ -65,7 +68,15 @@ export async function DELETE(req: Request) {
             );
         }
 
-        const deleted = await User.findByIdAndDelete(id);
+        // Soft delete - set isDeleted flag instead of removing
+        const deleted = await User.findByIdAndUpdate(
+            id,
+            { $set: { isDeleted: true, deletedAt: new Date() } },
+            { new: true }
+        );
+
+        console.log('Update result:', deleted ? 'Student updated' : 'Student not found');
+        console.log('isDeleted value:', deleted?.isDeleted);
 
         if (!deleted) {
             return NextResponse.json(

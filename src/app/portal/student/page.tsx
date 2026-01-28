@@ -17,6 +17,7 @@ interface EnrolledCourse {
     courseDetails?: {
         title: string;
         description: string;
+        thumbnail?: string;
         duration: string;
         level: string;
         totalLessons: number;
@@ -237,8 +238,15 @@ export default function StudentDashboard() {
                         <div className="flex flex-col md:flex-row gap-6 items-start">
                             {/* Course Thumbnail */}
                             <div className={`w-full md:w-64 h-40 rounded-2xl bg-gradient-to-br ${getGradient(0)} flex items-center justify-center flex-shrink-0 relative overflow-hidden group cursor-pointer`}>
+                                {continueCourse.courseDetails?.thumbnail ? (
+                                    <img
+                                        src={continueCourse.courseDetails.thumbnail}
+                                        alt={continueCourse.courseDetails.title}
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                    />
+                                ) : null}
                                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                                <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                <div className="z-10 w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                                     <Play className="w-8 h-8 text-white ml-1" fill="currentColor" />
                                 </div>
                             </div>
@@ -309,8 +317,15 @@ export default function StudentDashboard() {
                             className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer"
                         >
                             <div className={`h-32 bg-gradient-to-br ${getGradient(i)} relative`}>
+                                {course.courseDetails?.thumbnail ? (
+                                    <img
+                                        src={course.courseDetails.thumbnail}
+                                        alt={course.courseDetails.title}
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                    />
+                                ) : null}
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
-                                <div className="absolute bottom-3 left-3 px-2 py-1 bg-black/30 backdrop-blur-sm rounded text-white text-xs">
+                                <div className="absolute bottom-3 left-3 px-2 py-1 bg-black/30 backdrop-blur-sm rounded text-white text-xs z-10">
                                     {(course.courseDetails?.totalLessons || 0) - (course.completedLessons?.length || 0)} lessons left
                                 </div>
                             </div>

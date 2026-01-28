@@ -113,7 +113,7 @@ export async function PUT(req: Request) {
     }
 }
 
-// DELETE - Delete a note
+// DELETE - Delete a note (soft delete)
 export async function DELETE(req: Request) {
     try {
         await dbConnect();
@@ -128,7 +128,12 @@ export async function DELETE(req: Request) {
             );
         }
 
-        const deleted = await Note.findByIdAndDelete(noteId);
+        // Soft delete - set isDeleted flag instead of removing
+        const deleted = await Note.findByIdAndUpdate(
+            noteId,
+            { isDeleted: true, deletedAt: new Date() },
+            { new: true }
+        );
 
         if (!deleted) {
             return NextResponse.json(

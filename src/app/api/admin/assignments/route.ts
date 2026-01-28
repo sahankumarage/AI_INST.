@@ -11,13 +11,17 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url);
         const courseSlug = searchParams.get('courseSlug');
 
-        const query = courseSlug ? { courseSlug } : {};
+        // Filter out soft-deleted assignments
+        const query: any = { isDeleted: { $ne: true } };
+        if (courseSlug) {
+            query.courseSlug = courseSlug;
+        }
         const assignments = await Assignment.find(query).sort({ createdAt: -1 });
 
-        // Get submission counts for each assignment
+        // Get submission counts for each assignment (excluding soft-deleted)
         const assignmentsWithStats = await Promise.all(
             assignments.map(async (assignment) => {
-                const submissions = await Submission.find({ assignmentId: assignment._id });
+                const submissions = await Submission.find({ assignmentId: assignment._id, isDeleted: { $ne: true } });
                 const gradedCount = submissions.filter(s => s.status === 'graded').length;
 
                 return {
@@ -135,7 +139,7 @@ export async function PUT(req: Request) {
     }
 }
 
-// DELETE - Delete an assignment
+// DELETE - Delete an assignment (soft delete)
 export async function DELETE(req: Request) {
     try {
         await dbConnect();
@@ -150,8 +154,12 @@ export async function DELETE(req: Request) {
             );
         }
 
-        // Delete the assignment
-        const deleted = await Assignment.findByIdAndDelete(id);
+        // Soft delete - set isDeleted flag instead of removing
+        const deleted = await Assignment.findByIdAndUpdate(
+            id,
+            { isDeleted: true, deletedAt: new Date() },
+            { new: true }
+        );
 
         if (!deleted) {
             return NextResponse.json(
@@ -160,8 +168,11 @@ export async function DELETE(req: Request) {
             );
         }
 
-        // Also delete related submissions
-        await Submission.deleteMany({ assignmentId: id });
+        // Soft delete related submissions as well
+        await Submission.updateMany(
+            { assignmentId: id },
+            { isDeleted: true, deletedAt: new Date() }
+        );
 
         return NextResponse.json({ message: 'Assignment deleted' });
 

@@ -79,7 +79,7 @@ export async function PUT(
     }
 }
 
-// DELETE - Delete course by slug
+// DELETE - Delete course by slug (soft delete)
 export async function DELETE(
     req: Request,
     { params }: { params: Promise<{ slug: string }> }
@@ -88,7 +88,12 @@ export async function DELETE(
     try {
         await dbConnect();
 
-        const course = await Course.findOneAndDelete({ slug: resolvedParams.slug });
+        // Soft delete - set isDeleted flag instead of removing
+        const course = await Course.findOneAndUpdate(
+            { slug: resolvedParams.slug },
+            { isDeleted: true, deletedAt: new Date() },
+            { new: true }
+        );
 
         if (!course) {
             return NextResponse.json(

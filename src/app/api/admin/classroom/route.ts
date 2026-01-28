@@ -8,14 +8,15 @@ export async function GET() {
     try {
         await dbConnect();
 
-        // Get all students with enrollments
+        // Get all students with enrollments (excluding soft-deleted)
         const students = await User.find({
             role: 'student',
-            'enrolledCourses.0': { $exists: true }
+            'enrolledCourses.0': { $exists: true },
+            isDeleted: { $ne: true }
         }).lean();
 
-        // Get all courses for reference
-        const courses = await Course.find({}).lean();
+        // Get all courses for reference (excluding soft-deleted)
+        const courses = await Course.find({ isDeleted: { $ne: true } }).lean();
         const courseMap = new Map(courses.map((c: any) => [c.slug, c]));
 
         // Group students by course

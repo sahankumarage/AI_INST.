@@ -15,6 +15,8 @@ export interface ISubmission extends Document {
     gradedAt?: Date;
     status: 'pending' | 'submitted' | 'graded' | 'late';
     submittedAt: Date;
+    isDeleted?: boolean;
+    deletedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -37,7 +39,9 @@ const SubmissionSchema = new Schema<ISubmission>({
         enum: ['pending', 'submitted', 'graded', 'late'],
         default: 'submitted'
     },
-    submittedAt: { type: Date, default: Date.now }
+    submittedAt: { type: Date, default: Date.now },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date }
 }, {
     timestamps: true
 });
@@ -46,4 +50,11 @@ const SubmissionSchema = new Schema<ISubmission>({
 SubmissionSchema.index({ userId: 1, courseSlug: 1 });
 SubmissionSchema.index({ assignmentId: 1, userId: 1 }, { unique: true });
 
+// Prevent Mongoose OverwriteModelError while allowing schema updates in dev
+if (process.env.NODE_ENV !== 'production') {
+    delete mongoose.models.Submission;
+}
+
 export default mongoose.models.Submission || mongoose.model<ISubmission>('Submission', SubmissionSchema);
+
+

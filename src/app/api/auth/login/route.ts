@@ -26,6 +26,14 @@ export async function POST(req: Request) {
             );
         }
 
+        // Check if user is soft-deleted
+        if (user.isDeleted) {
+            return NextResponse.json(
+                { message: 'This account has been deleted. Please contact support.' },
+                { status: 403 }
+            );
+        }
+
         // Verify password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {

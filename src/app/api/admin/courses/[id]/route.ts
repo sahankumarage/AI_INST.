@@ -71,7 +71,7 @@ export async function PUT(
     }
 }
 
-// DELETE - Delete course
+// DELETE - Delete course (soft delete)
 export async function DELETE(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -80,7 +80,12 @@ export async function DELETE(
     try {
         await dbConnect();
 
-        const course = await Course.findByIdAndDelete(resolvedParams.id);
+        // Soft delete - set isDeleted flag instead of removing
+        const course = await Course.findByIdAndUpdate(
+            resolvedParams.id,
+            { isDeleted: true, deletedAt: new Date() },
+            { new: true }
+        );
 
         if (!course) {
             return NextResponse.json(

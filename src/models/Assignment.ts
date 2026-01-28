@@ -23,6 +23,8 @@ export interface IAssignment extends Document {
     maxGrade: number;
     attachments?: { name: string; url: string }[];
     allowLateSubmission: boolean;
+    isDeleted?: boolean;
+    deletedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -35,7 +37,9 @@ const AssignmentSchema = new Schema<IAssignment>({
     dueDate: { type: Date },
     maxGrade: { type: Number, default: 100 },
     attachments: [{ name: String, url: String }],
-    allowLateSubmission: { type: Boolean, default: true }
+    allowLateSubmission: { type: Boolean, default: true },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date }
 }, {
     timestamps: true
 });
@@ -43,4 +47,11 @@ const AssignmentSchema = new Schema<IAssignment>({
 // Compound index for efficient queries
 AssignmentSchema.index({ courseSlug: 1, lessonId: 1 });
 
+// Prevent Mongoose OverwriteModelError while allowing schema updates in dev
+if (process.env.NODE_ENV !== 'production') {
+    delete mongoose.models.Assignment;
+}
+
 export default mongoose.models.Assignment || mongoose.model<IAssignment>('Assignment', AssignmentSchema);
+
+

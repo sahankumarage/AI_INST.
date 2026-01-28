@@ -35,7 +35,6 @@ import {
     Paperclip
 } from "lucide-react";
 import { useAlert } from "@/components/ui/AlertService";
-import ZoomMeetingEmbed from "@/components/ZoomMeetingEmbed";
 
 interface Module {
     id: string;
@@ -60,8 +59,6 @@ interface Lesson {
     // Live class support
     isLiveClass?: boolean;
     liveClassUrl?: string;
-    zoomMeetingId?: string;
-    zoomMeetingNumber?: string;
     scheduledAt?: string;
     scheduledEndAt?: string;
 }
@@ -141,60 +138,7 @@ export default function ClassroomPage() {
     const [submissionFile, setSubmissionFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Zoom State
-    const [zoomDetails, setZoomDetails] = useState<any>(null);
-    const [meetingStatus, setMeetingStatus] = useState<string>('waiting');
-    const [isJoiningZoom, setIsJoiningZoom] = useState(false);
 
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (selectedLesson?.zoomMeetingId && !zoomDetails) {
-            checkMeetingStatus(selectedLesson.zoomMeetingId);
-            interval = setInterval(() => {
-                checkMeetingStatus(selectedLesson.zoomMeetingId!);
-            }, 30000);
-        }
-        return () => clearInterval(interval);
-    }, [selectedLesson, zoomDetails]);
-
-    const checkMeetingStatus = async (meetingId: string) => {
-        try {
-            const res = await fetch(`/api/zoom/status?meetingId=${meetingId}`);
-            const data = await res.json();
-            if (res.ok) {
-                setMeetingStatus(data.status);
-            }
-        } catch (err) {
-            console.error('Failed to check meeting status', err);
-        }
-    };
-
-    const joinLiveClass = async () => {
-        if (!userId || !selectedLesson) return;
-        setIsJoiningZoom(true);
-        try {
-            const res = await fetch('/api/zoom/signature', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId,
-                    courseSlug: slug,
-                    lessonId: selectedLesson.id
-                })
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                setZoomDetails(data);
-            } else {
-                alert.error("Failed to join class", data.message);
-            }
-        } catch (err: any) {
-            alert.error("Failed to join class", err.message);
-        } finally {
-            setIsJoiningZoom(false);
-        }
-    };
 
     useEffect(() => {
         const userStr = localStorage.getItem("lms_user");
@@ -620,88 +564,68 @@ export default function ClassroomPage() {
                                 <div className="relative z-10">
                                     {(selectedLesson as any).isLiveClass || (selectedLesson as any).liveClassUrl ? (
                                         /* Live Class Mode */
-                                        zoomDetails ? (
-                                            <ZoomMeetingEmbed
-                                                meetingNumber={zoomDetails.meetingNumber}
-                                                signature={zoomDetails.signature}
-                                                sdkKey={zoomDetails.sdkKey}
-                                                userName={zoomDetails.userName}
-                                                userEmail={zoomDetails.userEmail}
-                                                password={zoomDetails.password}
-                                                onLeave={() => setZoomDetails(null)}
-                                            />
-                                        ) : (
-                                            <div className="text-center">
-                                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-full text-red-400 text-sm font-medium mb-6">
-                                                    <span className={`w-2 h-2 rounded-full ${meetingStatus === 'started' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                                                    {meetingStatus === 'started' ? 'Live Now' : 'Live Online Class'}
-                                                </div>
-                                                <h3 className="text-2xl font-bold text-white mb-2">{selectedLesson.title}</h3>
+                                        <div className="text-center">
+                                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-full text-red-400 text-sm font-medium mb-6">
+                                                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                                Live Online Class
+                                            </div>
+                                            <h3 className="text-2xl font-bold text-white mb-2">{selectedLesson.title}</h3>
 
-                                                {(selectedLesson as any).scheduledAt && (
-                                                    <div className="flex items-center justify-center gap-4 text-slate-300 mb-6">
-                                                        <div className="flex items-center gap-2">
-                                                            <Clock size={16} />
-                                                            <span>
-                                                                {new Date((selectedLesson as any).scheduledAt).toLocaleDateString('en-US', {
-                                                                    weekday: 'long',
-                                                                    month: 'short',
-                                                                    day: 'numeric'
-                                                                })}
-                                                            </span>
-                                                        </div>
-                                                        <span>•</span>
+                                            {(selectedLesson as any).scheduledAt && (
+                                                <div className="flex items-center justify-center gap-4 text-slate-300 mb-6">
+                                                    <div className="flex items-center gap-2">
+                                                        <Clock size={16} />
                                                         <span>
-                                                            {new Date((selectedLesson as any).scheduledAt).toLocaleTimeString('en-US', {
-                                                                hour: '2-digit',
-                                                                minute: '2-digit'
+                                                            {new Date((selectedLesson as any).scheduledAt).toLocaleDateString('en-US', {
+                                                                weekday: 'long',
+                                                                month: 'short',
+                                                                day: 'numeric'
                                                             })}
                                                         </span>
                                                     </div>
-                                                )}
+                                                    <span>•</span>
+                                                    <span>
+                                                        {new Date((selectedLesson as any).scheduledAt).toLocaleTimeString('en-US', {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </span>
+                                                </div>
+                                            )}
 
-                                                {(selectedLesson as any).zoomMeetingNumber ? (
-                                                    <button
-                                                        onClick={joinLiveClass}
-                                                        disabled={isJoiningZoom}
-                                                        className="inline-flex items-center gap-3 px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-lg shadow-green-500/30"
-                                                    >
-                                                        {isJoiningZoom ? <Loader2 size={24} className="animate-spin" /> : <Video size={24} />}
-                                                        {meetingStatus === 'started' ? 'Join Live Class' : 'Join Meeting Room'}
-                                                    </button>
-                                                ) : (selectedLesson as any).liveClassUrl ? (
+                                            {(selectedLesson as any).liveClassUrl ? (
+                                                <a
+                                                    href={(selectedLesson as any).liveClassUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-lg shadow-blue-500/30"
+                                                >
+                                                    <Video size={24} />
+                                                    Join Live Class
+                                                    <ExternalLink size={18} />
+                                                </a>
+                                            ) : (
+                                                <div className="inline-flex items-center gap-3 px-8 py-4 bg-slate-700 text-slate-400 rounded-xl font-bold text-lg cursor-not-allowed">
+                                                    <Video size={24} />
+                                                    Meeting Link Coming Soon
+                                                </div>
+                                            )}
+
+                                            {/* Recording link if available */}
+                                            {(selectedLesson as any).recordingUrl && (
+                                                <div className="mt-6">
                                                     <a
-                                                        href={(selectedLesson as any).liveClassUrl}
+                                                        href={(selectedLesson as any).recordingUrl}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-lg shadow-blue-500/30"
+                                                        className="inline-flex items-center gap-2 text-indigo-300 hover:text-indigo-200 transition-colors"
                                                     >
-                                                        <Video size={24} />
-                                                        Join Zoom Meeting
+                                                        <Play size={16} />
+                                                        Watch Recording
                                                     </a>
-                                                ) : (
-                                                    <div className="inline-flex items-center gap-3 px-8 py-4 bg-slate-700 text-slate-400 rounded-xl font-bold text-lg cursor-not-allowed">
-                                                        <Video size={24} />
-                                                        Meeting Link Coming Soon
-                                                    </div>
-                                                )}
-
-                                                {/* Recording link if available */}
-                                                {(selectedLesson as any).recordingUrl && (
-                                                    <div className="mt-6">
-                                                        <a
-                                                            href={(selectedLesson as any).recordingUrl}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="inline-flex items-center gap-2 text-indigo-300 hover:text-indigo-200 transition-colors"
-                                                        >
-                                                            <Play size={16} />
-                                                            Watch Recording
-                                                        </a>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )
+                                                </div>
+                                            )}
+                                        </div>
                                     ) : selectedLesson.videoUrl || (selectedLesson as any).recordingUrl ? (
                                         /* Pre-recorded Video Mode */
                                         <div>
