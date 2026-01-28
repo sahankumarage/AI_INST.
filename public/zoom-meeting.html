@@ -81,110 +81,122 @@
     <script src="https://source.zoom.us/3.5.2/zoom-meeting-embedded-3.5.2.min.js"></script>
 
     <script>
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        const statusText = document.getElementById('statusText');
-        const client = ZoomMtgEmbedded.createClient();
+        // Wait for all scripts to load
+        window.addEventListener('load', function() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const statusText = document.getElementById('statusText');
 
-        // Parse params
-        const urlParams = new URLSearchParams(window.location.search);
-        let meetingNumber = urlParams.get('meetingNumber');
-        if (meetingNumber) meetingNumber = meetingNumber.replace(/[\s-]/g, '');
+            // Check if ZoomMtgEmbedded is available
+            if (typeof ZoomMtgEmbedded === 'undefined') {
+                console.error('ZoomMtgEmbedded is not loaded');
+                statusText.innerText = 'Failed to load Zoom SDK. Please refresh.';
+                statusText.style.color = '#ef4444';
+                return;
+            }
 
-        const signature = urlParams.get('signature');
-        const sdkKey = urlParams.get('sdkKey');
-        const userName = urlParams.get('userName') || 'Student';
-        const userEmail = urlParams.get('userEmail') || '';
-        const password = urlParams.get('password') || '';
+            const client = ZoomMtgEmbedded.createClient();
 
-        console.log('=== ZOOM SDK INITIALIZATION ===');
-        console.log('Meeting Number:', meetingNumber);
-        console.log('Meeting Number (cleaned):', meetingNumber?.replace(/[\s-]/g, ''));
-        console.log('SDK Key:', sdkKey?.substring(0, 10) + '...');
-        console.log('Signature preview:', signature?.substring(0, 50) + '...');
-        console.log('User Name:', userName);
-        console.log('Password present:', !!password);
+            // Parse params
+            const urlParams = new URLSearchParams(window.location.search);
+            let meetingNumber = urlParams.get('meetingNumber');
+            if (meetingNumber) meetingNumber = meetingNumber.replace(/[\s-]/g, '');
 
-        async function startMeeting() {
-            try {
-                // Initialize the SDK
-                await client.init({
-                    zoomAppRoot: document.getElementById('meetingSDKElement'),
-                    language: 'en-US',
-                    customize: {
-                        meetingInfo: ['topic', 'host', 'mn', 'participant', 'dc', 'enctype'],
-                        video: {
-                            isResizable: true,
-                            viewSizes: {
-                                default: { width: 1000, height: 600 },
-                                ribbon: { width: 300, height: 600 }
+            const signature = urlParams.get('signature');
+            const sdkKey = urlParams.get('sdkKey');
+            const userName = urlParams.get('userName') || 'Student';
+            const userEmail = urlParams.get('userEmail') || '';
+            const password = urlParams.get('password') || '';
+
+            console.log('=== ZOOM SDK INITIALIZATION ===');
+            console.log('Meeting Number:', meetingNumber);
+            console.log('SDK Key:', sdkKey?.substring(0, 10) + '...');
+            console.log('Signature preview:', signature?.substring(0, 50) + '...');
+            console.log('User Name:', userName);
+            console.log('Password present:', !!password);
+
+            async function startMeeting() {
+                try {
+                    // Initialize the SDK
+                    await client.init({
+                        zoomAppRoot: document.getElementById('meetingSDKElement'),
+                        language: 'en-US',
+                        customize: {
+                            meetingInfo: ['topic', 'host', 'mn', 'participant', 'dc', 'enctype'],
+                            video: {
+                                isResizable: true,
+                                viewSizes: {
+                                    default: { width: 1000, height: 600 },
+                                    ribbon: { width: 300, height: 600 }
+                                }
                             }
                         }
+                    });
+
+                    console.log('SDK Inited');
+
+                    // Set up event listeners AFTER init
+                    client.on('connection-change', (payload) => {
+                        console.log('Connection Status:', payload.state);
+                        if (payload.state === 'Connected') {
+                            loadingOverlay.classList.add('hidden');
+                        } else if (payload.state === 'Closed') {
+                            if (window.parent) {
+                                window.parent.postMessage({ type: 'zoom-meeting-ended' }, '*');
+                            }
+                        }
+                    });
+
+                    console.log('Joining meeting...');
+
+                    // Join parameters
+                    const joinParams = {
+                        sdkKey: sdkKey,
+                        signature: signature,
+                        meetingNumber: meetingNumber,
+                        password: password,
+                        userName: userName,
+                        userEmail: userEmail,
+                        tk: '',
+                        zak: ''
+                    };
+
+                    await client.join(joinParams);
+
+                    console.log('✅ Joined successfully');
+                    loadingOverlay.classList.add('hidden');
+
+                } catch (error) {
+                    console.error('=== ZOOM SDK ERROR ===');
+                    console.error('Error object:', error);
+                    console.error('Error code:', error.errorCode);
+                    console.error('Error message:', error.message);
+                    console.error('Error reason:', error.reason);
+                    console.error('=== END ZOOM SDK ERROR ===');
+
+                    let errorMsg = 'Failed to join meeting';
+                    if (error.errorCode === 200) {
+                        errorMsg = 'Meeting has not started yet. Please wait for the instructor.';
+                    } else if (error.errorCode === 3712) {
+                        errorMsg = 'Invalid meeting number. Please contact support.';
+                    } else if (error.reason) {
+                        errorMsg = 'Error: ' + error.reason;
+                    } else if (error.message) {
+                        errorMsg = 'Error: ' + error.message;
                     }
-                });
 
-                console.log('SDK Inited, Joining...');
-
-                // Join parameters
-                const joinParams = {
-                    sdkKey: sdkKey,
-                    signature: signature,
-                    meetingNumber: meetingNumber,
-                    password: password,
-                    userName: userName,
-                    userEmail: userEmail,
-                    tk: '',
-                    zak: '' // Token passed if starting meeting on behalf of someone
-                };
-
-                await client.join(joinParams);
-
-                console.log('Joined successfully');
-                loadingOverlay.classList.add('hidden');
-
-            } catch (error) {
-                console.error('=== ZOOM SDK ERROR ===');
-                console.error('Error object:', error);
-                console.error('Error code:', error.errorCode);
-                console.error('Error message:', error.message);
-                console.error('Error reason:', error.reason);
-                console.error('=== END ZOOM SDK ERROR ===');
-
-                let errorMsg = 'Failed to join meeting';
-                if (error.errorCode === 200) {
-                    errorMsg = 'Meeting has not started yet. Please wait for the instructor.';
-                } else if (error.errorCode === 3712) {
-                    errorMsg = 'Invalid meeting number. Please contact support.';
-                } else if (error.reason) {
-                    errorMsg = 'Error: ' + error.reason;
-                } else if (error.message) {
-                    errorMsg = 'Error: ' + error.message;
+                    statusText.innerText = errorMsg;
+                    statusText.style.color = '#ef4444';
                 }
+            }
 
-                statusText.innerText = errorMsg;
+            // Start
+            if (meetingNumber && signature && sdkKey) {
+                startMeeting();
+            } else {
+                statusText.innerText = 'Missing meeting parameters';
                 statusText.style.color = '#ef4444';
             }
-        }
-
-        // Add event listeners for meeting status
-        client.on('connection-change', (payload) => {
-            console.log('Connection Status:', payload.state);
-            if (payload.state === 'Connected') {
-                loadingOverlay.classList.add('hidden');
-            } else if (payload.state === 'Closed') {
-                // Notify parent to close
-                if (window.parent) {
-                    window.parent.postMessage({ type: 'zoom-meeting-ended' }, '*');
-                }
-            }
         });
-
-        // Start
-        if (meetingNumber && signature && sdkKey) {
-            startMeeting();
-        } else {
-            statusText.innerText = 'Missing meeting parameters';
-            statusText.style.color = '#ef4444';
-        }
     </script>
 </body>
 
