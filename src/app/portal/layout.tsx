@@ -16,7 +16,8 @@ import {
     CreditCard,
     FolderOpen,
     Award,
-    ChevronRight
+    ChevronRight,
+    Grid
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertProvider } from "@/components/ui/AlertService";
@@ -26,6 +27,7 @@ interface User {
     name: string;
     email: string;
     role: 'student' | 'admin';
+    avatar?: string;
     enrolledCourses?: any[];
 }
 
@@ -51,6 +53,22 @@ export default function PortalLayout({
         try {
             const userData = JSON.parse(userStr);
             setUser(userData);
+
+            // Fetch latest user data to sync avatar
+            fetch(`/api/student/profile?userId=${userData.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.user) {
+                        const updatedUser = {
+                            ...userData,
+                            avatar: data.user.avatar
+                        };
+                        setUser(updatedUser);
+                        localStorage.setItem("lms_user", JSON.stringify(updatedUser));
+                    }
+                })
+                .catch(err => console.error("Failed to sync profile", err));
+
         } catch {
             router.push("/student-login");
             return;
@@ -73,6 +91,7 @@ export default function PortalLayout({
     const studentNavItems = [
         { name: "Dashboard", href: "/portal/student", icon: LayoutDashboard },
         { name: "My Courses", href: "/portal/student/courses", icon: BookOpen },
+        { name: "Course Catalog", href: "/portal/student/catalog", icon: Grid },
         { name: "Certificates", href: "/portal/student/certificates", icon: Award },
         { name: "Settings", href: "/portal/student/settings", icon: Settings },
     ];
@@ -173,9 +192,13 @@ export default function PortalLayout({
                             {/* User Profile & Logout */}
                             <div className="p-4 border-t border-slate-800">
                                 <div className="flex items-center gap-3 mb-4 px-2">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center font-bold text-sm">
-                                        {user.name?.charAt(0) || 'U'}
-                                    </div>
+                                    {user.avatar ? (
+                                        <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover border-2 border-slate-700" />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center font-bold text-sm text-white">
+                                            {user.name?.charAt(0) || 'U'}
+                                        </div>
+                                    )}
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium text-sm truncate">{user.name}</p>
                                         <p className="text-xs text-slate-400 truncate">{user.email}</p>
@@ -216,9 +239,13 @@ export default function PortalLayout({
                                 <Bell size={20} />
                                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
                             </button>
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center font-bold text-white text-sm">
-                                {user.name?.charAt(0) || 'U'}
-                            </div>
+                            {user.avatar ? (
+                                <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover border border-slate-200" />
+                            ) : (
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center font-bold text-white text-sm">
+                                    {user.name?.charAt(0) || 'U'}
+                                </div>
+                            )}
                         </div>
                     </header>
 

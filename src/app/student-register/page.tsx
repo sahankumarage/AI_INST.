@@ -20,6 +20,7 @@ function RegisterForm() {
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
+        mobileNumber: "",
         email: "",
         password: ""
     });
@@ -117,6 +118,18 @@ function RegisterForm() {
                                 placeholder="Doe"
                             />
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Mobile Number</label>
+                        <input
+                            type="tel"
+                            required
+                            value={formData.mobileNumber}
+                            onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                            placeholder="+94 77 123 4567"
+                        />
                     </div>
 
                     <div>

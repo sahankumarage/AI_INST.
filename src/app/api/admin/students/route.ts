@@ -29,6 +29,7 @@ export async function GET(req: Request) {
                 name: `${s.firstName} ${s.lastName}`,
                 email: s.email,
                 phone: s.phone,
+                avatar: s.avatar,
                 enrolledCourses: s.enrolledCourses,
                 createdAt: s.createdAt
             })),

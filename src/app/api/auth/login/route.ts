@@ -40,6 +40,7 @@ export async function POST(req: Request) {
             name: `${user.firstName} ${user.lastName}`,
             email: user.email,
             role: user.role,
+            avatar: user.avatar,
             enrolledCourses: user.enrolledCourses
         };
 

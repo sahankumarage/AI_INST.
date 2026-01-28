@@ -30,6 +30,7 @@ interface Student {
     name: string;
     email: string;
     phone?: string;
+    avatar?: string;
     enrolledCourses: EnrolledCourse[];
     createdAt: string;
 }
@@ -92,7 +93,8 @@ export default function AdminStudentsPage() {
 
     const filteredStudents = students.filter(s => {
         const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.email.toLowerCase().includes(searchQuery.toLowerCase());
+            s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (s.phone && s.phone.includes(searchQuery));
 
         if (filterStatus === 'paid') {
             return matchesSearch && s.enrolledCourses.some(c => c.paid);
@@ -260,12 +262,16 @@ export default function AdminStudentsPage() {
                                     <tr key={student.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="py-4 px-6">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white font-bold">
-                                                    {student.name.charAt(0)}
-                                                </div>
+                                                {student.avatar ? (
+                                                    <img src={student.avatar} alt={student.name} className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white font-bold">
+                                                        {student.name.charAt(0)}
+                                                    </div>
+                                                )}
                                                 <div>
                                                     <div className="font-medium text-slate-900">{student.name}</div>
-                                                    <div className="text-xs text-slate-500">{student.email}</div>
+                                                    <div className="text-xs text-slate-500">{student.phone || student.email}</div>
                                                 </div>
                                             </div>
                                         </td>
