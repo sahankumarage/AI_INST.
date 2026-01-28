@@ -34,6 +34,18 @@ interface Course {
     promoCodes?: any[];
 }
 
+interface CourseFormData {
+    title: string;
+    description: string;
+    thumbnail: string;
+    price: number;
+    level: string;
+    duration: string;
+    isPublished: boolean;
+    productId: string;
+    promoCodes: any[];
+}
+
 export default function AdminCoursesPage() {
     const alert = useAlert();
     const { showConfirm, ConfirmModal } = useConfirmModal();
@@ -44,7 +56,7 @@ export default function AdminCoursesPage() {
     const [editingCourse, setEditingCourse] = useState<Course | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isSeeding, setIsSeeding] = useState(false);
-    const [formData, setFormData] = useState<any>({
+    const [formData, setFormData] = useState<CourseFormData>({
         title: "",
         description: "",
         thumbnail: "",
