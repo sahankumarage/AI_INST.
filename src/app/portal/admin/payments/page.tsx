@@ -171,7 +171,7 @@ export default function AdminPaymentsPage() {
                             +12%
                         </span>
                     </div>
-                    <div className="text-3xl font-bold mb-1">${totalRevenue.toLocaleString()}</div>
+                    <div className="text-3xl font-bold mb-1">LKR {totalRevenue.toLocaleString()}</div>
                     <div className="text-emerald-100">Total Revenue</div>
                 </motion.div>
 
@@ -186,7 +186,7 @@ export default function AdminPaymentsPage() {
                             <Clock size={22} />
                         </div>
                         <div>
-                            <div className="text-2xl font-bold text-slate-900">${pendingAmount.toLocaleString()}</div>
+                            <div className="text-2xl font-bold text-slate-900">LKR {pendingAmount.toLocaleString()}</div>
                             <div className="text-sm text-slate-500">Pending Payments</div>
                         </div>
                     </div>
@@ -278,7 +278,7 @@ export default function AdminPaymentsPage() {
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-sm text-slate-600 max-w-[200px] truncate" title={payment.courseName}>{payment.courseName}</td>
-                                        <td className="py-4 px-6 font-semibold text-slate-900">${payment.amount}</td>
+                                        <td className="py-4 px-6 font-semibold text-slate-900">LKR {payment.amount.toLocaleString()}</td>
                                         <td className="py-4 px-6 text-sm text-slate-600 capitalize">
                                             {payment.paymentMethod === 'Bank Transfer' ? (
                                                 <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100">
@@ -352,7 +352,7 @@ export default function AdminPaymentsPage() {
                                 <div className="mb-4">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-sm text-slate-500">Amount</span>
-                                        <span className="text-lg font-bold text-slate-900">${selectedPayment.amount}</span>
+                                        <span className="text-lg font-bold text-slate-900">LKR {selectedPayment.amount.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-sm text-slate-500">Transaction ID</span>

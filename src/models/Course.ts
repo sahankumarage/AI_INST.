@@ -56,6 +56,15 @@ export interface ICourse extends Document {
     rating: number;
     isDeleted: boolean;
     deletedAt?: Date;
+    productId?: string;
+    promoCodes?: {
+        code: string;
+        discountType: 'percentage' | 'fixed';
+        discountAmount: number;
+        expiresAt?: Date;
+        maxUses?: number;
+        usedCount: number;
+    }[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -96,7 +105,7 @@ const CourseSchema = new Schema<ICourse>({
     longDescription: { type: String },
     thumbnail: { type: String },
     price: { type: Number, required: true, default: 0 },
-    currency: { type: String, default: 'USD' },
+    currency: { type: String, default: 'LKR' },
     level: { type: String, enum: ['Beginner', 'Intermediate', 'Advanced'], default: 'Beginner' },
     duration: { type: String },
     category: { type: String },
@@ -112,9 +121,24 @@ const CourseSchema = new Schema<ICourse>({
     enrolledCount: { type: Number, default: 0 },
     rating: { type: Number, default: 0 },
     isDeleted: { type: Boolean, default: false },
-    deletedAt: { type: Date }
+    deletedAt: { type: Date },
+    productId: { type: String },
+    promoCodes: [{
+        code: { type: String, required: true },
+        discountType: { type: String, enum: ['percentage', 'fixed'], default: 'percentage' },
+        discountAmount: { type: Number, required: true },
+        expiresAt: { type: Date },
+        maxUses: { type: Number },
+        usedCount: { type: Number, default: 0 }
+    }]
 }, {
-    timestamps: true
+    timestamps: true,
+    strict: false // Allow dynamic fields to resolve potential schema caching issues
 });
+
+// Prevent Mongoose OverwriteModelError while allowing schema updates in dev
+if (process.env.NODE_ENV !== 'production') {
+    delete mongoose.models.Course;
+}
 
 export default mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { courseData } from "@/data/courses";
+
 import { motion } from "framer-motion";
 import { ArrowLeft, CreditCard, ShieldCheck, Check, Loader2, AlertCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -13,8 +13,10 @@ export default function EnrollPage() {
     const router = useRouter();
     const alertService = useAlert();
     const slug = typeof params?.slug === 'string' ? params.slug : '';
-    const course = courseData[slug];
 
+    // State
+    const [course, setCourse] = useState<any>(null);
+    const [isLoadingCourse, setIsLoadingCourse] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState("");
     const [userId, setUserId] = useState<string | null>(null);
@@ -26,6 +28,32 @@ export default function EnrollPage() {
     const [promoCode, setPromoCode] = useState("");
     const [discount, setDiscount] = useState(0);
     const [isPromoApplied, setIsPromoApplied] = useState(false);
+
+    // Fetch Course Data
+    useEffect(() => {
+        const fetchCourse = async () => {
+            if (!slug) return;
+            try {
+                const res = await fetch(`/api/courses?slug=${slug}`);
+                if (!res.ok) throw new Error('Failed to load course');
+                const data = await res.json();
+
+                // Add fallback gradient if missing (since DB might not have it)
+                const courseData = data.course;
+                if (courseData && !courseData.gradient) {
+                    courseData.gradient = "from-indigo-600 to-violet-600";
+                }
+                setCourse(courseData);
+            } catch (err) {
+                console.error("Error fetching course:", err);
+                setError("Could not load course details.");
+            } finally {
+                setIsLoadingCourse(false);
+            }
+        };
+
+        fetchCourse();
+    }, [slug]);
 
     useEffect(() => {
         const userStr = localStorage.getItem("lms_user");
@@ -45,11 +73,21 @@ export default function EnrollPage() {
         }
     }, [slug]);
 
+    if (isLoadingCourse) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <Loader2 className="w-12 h-12 animate-spin text-indigo-600" />
+            </div>
+        );
+    }
+
     if (!course) {
         return (
-            <div className="p-8 text-center bg-white rounded-lg shadow">
-                <h1 className="text-2xl font-bold mb-4 text-slate-800">Course not found</h1>
-                <Link href="/portal/student/courses" className="text-indigo-600 hover:underline">
+            <div className="p-8 text-center bg-white rounded-lg shadow max-w-2xl mx-auto my-12">
+                <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+                <h1 className="text-2xl font-bold mb-2 text-slate-800">Course Not Found</h1>
+                <p className="text-slate-500 mb-6">The course you are looking for does not exist or has been removed.</p>
+                <Link href="/portal/student/courses" className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
                     Back to Courses
                 </Link>
             </div>
@@ -57,22 +95,44 @@ export default function EnrollPage() {
     }
 
     // Calculations
-    const originalPrice = course.price || 499;
+    const originalPrice = course.price || 0;
     const discountAmount = originalPrice * discount;
     const finalPrice = originalPrice - discountAmount;
 
-    const handleApplyPromo = () => {
+    const handleApplyPromo = async () => {
         if (!promoCode) return;
 
-        // Mock promo code logic
-        if (promoCode.toUpperCase() === 'AI_INST_2025' || promoCode.toUpperCase() === 'WELCOME10') {
-            setDiscount(0.1); // 10%
-            setIsPromoApplied(true);
-            alertService.success("Promo Code Applied", "You saved 10%!");
-        } else {
-            alertService.error("Invalid Code", "This promo code is invalid or expired.");
-            setDiscount(0);
-            setIsPromoApplied(false);
+        setIsProcessing(true); // Re-using processing state for loading indicator if needed, or create new one
+        try {
+            const res = await fetch('/api/courses/verify-promo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slug, code: promoCode })
+            });
+            const data = await res.json();
+
+            if (data.isValid) {
+                // Calculate discount factor (e.g., 10% -> 0.1)
+                // Assuming stored as percentage number (e.g., 20)
+                const discountFactor = data.discountType === 'percentage'
+                    ? (data.discountAmount / 100)
+                    : 0; // Fixed amount logic would range differently, keeping simple for now
+
+                // If it's a fixed amount, we might need to adjust logic, but let's assume percentage for now as per previous UI
+
+                setDiscount(discountFactor);
+                setIsPromoApplied(true);
+                alertService.success("Promo Code Applied", `You saved ${data.discountAmount}%!`);
+            } else {
+                alertService.error("Invalid Code", data.message || "This promo code is invalid.");
+                setDiscount(0);
+                setIsPromoApplied(false);
+            }
+        } catch (error) {
+            console.error("Promo check error", error);
+            alertService.error("Error", "Could not verify promo code");
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -101,15 +161,20 @@ export default function EnrollPage() {
 
         try {
             if (paymentMethod === 'card') {
-                // Call Dodo Payment initialization
+                // Get user details from localStorage for Dodo
+                const userStr = localStorage.getItem("lms_user");
+                const user = userStr ? JSON.parse(userStr) : {};
+
+                // Call Dodo Payment initialization with new dynamic pricing API
                 const res = await fetch('/api/payments/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         userId,
                         courseSlug: slug,
-                        courseName: course.title,
-                        amount: finalPrice,
+                        promoCode: isPromoApplied ? promoCode : undefined,
+                        userEmail: user.email,
+                        userName: user.name,
                         successUrl: `${window.location.origin}/portal/student/courses?enrolled=success&slug=${slug}`,
                         cancelUrl: `${window.location.href}?payment=cancelled`
                     })
@@ -262,12 +327,14 @@ export default function EnrollPage() {
                     <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm mb-8">
                         <h3 className="font-bold text-slate-900 mb-4 text-lg">What's included:</h3>
                         <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {course.features.map((feature: any, i: number) => (
+                            {course.features?.map((feature: any, i: number) => (
                                 <li key={i} className="flex items-center gap-3 text-slate-600">
                                     <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0 border border-indigo-100">
                                         <Check size={14} className="text-indigo-600" />
                                     </div>
-                                    <span className="text-sm font-medium">{feature.text}</span>
+                                    <span className="text-sm font-medium">
+                                        {typeof feature === 'string' ? feature : feature.text}
+                                    </span>
                                 </li>
                             ))}
                         </ul>
@@ -287,19 +354,19 @@ export default function EnrollPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                 <div className="p-4 bg-white rounded-xl border border-slate-200">
                                     <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Bank Name</p>
-                                    <p className="font-semibold text-slate-900">Commercial Bank</p>
+                                    <p className="font-semibold text-slate-900">Sampath Bank</p>
                                 </div>
                                 <div className="p-4 bg-white rounded-xl border border-slate-200">
                                     <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Account Name</p>
-                                    <p className="font-semibold text-slate-900">AI INST Academy</p>
+                                    <p className="font-semibold text-slate-900">Sahan Kumarage</p>
                                 </div>
                                 <div className="p-4 bg-white rounded-xl border border-slate-200">
                                     <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Account Number</p>
-                                    <p className="font-mono font-bold text-lg text-indigo-600">1000 5566 8890</p>
+                                    <p className="font-mono font-bold text-lg text-indigo-600">119952914782</p>
                                 </div>
                                 <div className="p-4 bg-white rounded-xl border border-slate-200">
                                     <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Branch</p>
-                                    <p className="font-semibold text-slate-900">Colombo Head Office</p>
+                                    <p className="font-semibold text-slate-900">Mount Lavinia</p>
                                 </div>
                             </div>
 
@@ -329,12 +396,38 @@ export default function EnrollPage() {
                         {/* Price Section */}
                         <div className="mb-6 border-b border-slate-100 pb-6">
                             <p className="text-slate-500 text-sm mb-1 font-medium">Total Investment</p>
-                            <div className="flex items-end gap-2">
-                                <h2 className="text-4xl font-bold text-slate-900">${finalPrice.toFixed(2)}</h2>
+                            <div className="flex items-end gap-2 mb-2">
+                                <h2 className="text-4xl font-bold text-slate-900">
+                                    {course.currency === 'USD' ? '$' : 'LKR '}
+                                    {finalPrice.toLocaleString()}
+                                </h2>
                                 {isPromoApplied && (
-                                    <span className="text-lg text-slate-400 line-through mb-1">${originalPrice}</span>
+                                    <span className="text-lg text-slate-400 line-through mb-1">
+                                        {course.currency === 'USD' ? '$' : 'LKR '}
+                                        {originalPrice.toLocaleString()}
+                                    </span>
                                 )}
                             </div>
+                            {isPromoApplied && (
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold">
+                                                ✓
+                                            </div>
+                                            <p className="text-sm font-semibold text-green-800">
+                                                Promo Code Applied!
+                                            </p>
+                                        </div>
+                                        <p className="text-lg font-bold text-green-700">
+                                            Save {course.currency === 'USD' ? '$' : 'LKR '}{discountAmount.toLocaleString()}
+                                        </p>
+                                    </div>
+                                    <p className="text-xs text-green-600 mt-2">
+                                        You'll be charged <strong>{course.currency === 'USD' ? '$' : 'LKR '}{finalPrice.toLocaleString()}</strong> on the payment page.
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Payment Method Selector */}
@@ -403,19 +496,87 @@ export default function EnrollPage() {
                         {/* Bank Receipt Upload */}
                         {paymentMethod === 'bank' && (
                             <div className="mb-6 animate-in fade-in slide-in-from-top-2">
-                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Upload Receipt</label>
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
+                                    Upload Payment Receipt
+                                </label>
+
+                                {/* Custom File Upload Button */}
                                 <div className="relative">
                                     <input
                                         type="file"
+                                        id="receipt-upload"
                                         accept="image/*,.pdf"
                                         onChange={handleFileChange}
-                                        className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                        className="hidden"
                                     />
-                                    {receiptFile && (
-                                        <p className="mt-2 text-xs text-green-600 flex items-center gap-1">
-                                            <Check size={12} /> {receiptFile.name}
-                                        </p>
-                                    )}
+                                    <label
+                                        htmlFor="receipt-upload"
+                                        className="block w-full cursor-pointer"
+                                    >
+                                        <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${receiptFile
+                                                ? 'border-green-300 bg-green-50'
+                                                : 'border-slate-300 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50'
+                                            }`}>
+                                            {receiptFile ? (
+                                                // File Selected State
+                                                <div className="space-y-3">
+                                                    <div className="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center mx-auto">
+                                                        <Check size={24} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-green-700">
+                                                            Receipt Uploaded Successfully
+                                                        </p>
+                                                        <p className="text-xs text-green-600 mt-1">
+                                                            {receiptFile.name}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            setReceiptFile(null);
+                                                        }}
+                                                        className="text-xs text-slate-600 hover:text-slate-800 underline"
+                                                    >
+                                                        Choose Different File
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                // Upload State
+                                                <div className="space-y-3">
+                                                    <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto">
+                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-slate-800">
+                                                            Click to Upload Receipt
+                                                        </p>
+                                                        <p className="text-xs text-slate-500 mt-1">
+                                                            or drag and drop
+                                                        </p>
+                                                    </div>
+                                                    <p className="text-xs text-slate-400">
+                                                        PNG, JPG, PDF up to 10MB
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </label>
+                                </div>
+
+                                {/* Bank Transfer Instructions */}
+                                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p className="text-xs font-semibold text-blue-800 mb-2">
+                                        📋 Bank Transfer Instructions
+                                    </p>
+                                    <ul className="text-xs text-blue-700 space-y-1">
+                                        <li>• Transfer to: [Your Bank Account Details]</li>
+                                        <li>• Upload receipt after payment</li>
+                                        <li>• We'll verify within 24 hours</li>
+                                    </ul>
                                 </div>
                             </div>
                         )}

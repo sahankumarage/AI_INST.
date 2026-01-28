@@ -30,6 +30,8 @@ interface Course {
     thumbnail?: string;
     enrolledCount: number;
     isPublished: boolean;
+    productId?: string;
+    promoCodes?: any[];
 }
 
 export default function AdminCoursesPage() {
@@ -42,15 +44,20 @@ export default function AdminCoursesPage() {
     const [editingCourse, setEditingCourse] = useState<Course | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isSeeding, setIsSeeding] = useState(false);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<any>({
         title: "",
         description: "",
         thumbnail: "",
         price: 0,
         level: "Beginner",
         duration: "",
-        isPublished: false
+        isPublished: false,
+        productId: "",
+        promoCodes: [] as any[]
     });
+
+    const [newPromoCode, setNewPromoCode] = useState("");
+    const [newPromoDiscount, setNewPromoDiscount] = useState("");
 
     // Gradient based on index
     const getGradient = (index: number) => {
@@ -74,6 +81,8 @@ export default function AdminCoursesPage() {
             if (showNotification) {
                 alert.success("Courses Loaded", `Found ${data.courses?.length || 0} courses`);
             }
+            // Debug logging
+            console.log('Fetched courses:', data.courses);
         } catch (error) {
             console.error('Error fetching courses:', error);
             alert.error("Failed to load courses", "Please try again");
@@ -141,12 +150,17 @@ export default function AdminCoursesPage() {
             price: 0,
             level: "Beginner",
             duration: "",
-            isPublished: false
+            isPublished: false,
+            productId: "",
+            promoCodes: []
         });
+        setNewPromoCode("");
+        setNewPromoDiscount("");
         setIsModalOpen(true);
     };
 
     const openEditModal = (course: Course) => {
+        console.log('Editing course:', course);
         setEditingCourse(course);
         setFormData({
             title: course.title,
@@ -155,9 +169,60 @@ export default function AdminCoursesPage() {
             price: course.price,
             level: course.level,
             duration: course.duration,
-            isPublished: course.isPublished
+            isPublished: course.isPublished,
+            productId: course.productId || "",
+            promoCodes: course.promoCodes || []
         });
+        setNewPromoCode("");
+        setNewPromoDiscount("");
         setIsModalOpen(true);
+    };
+
+    // Simple local handlers for promo codes - saved when course is saved
+    const handleAddPromo = () => {
+        console.log('handleAddPromo called', { newPromoCode, newPromoDiscount });
+
+        if (!newPromoCode.trim() || !newPromoDiscount.trim()) {
+            alert.error("Missing Info", "Please enter both a code and discount amount");
+            return;
+        }
+
+        const newCode = {
+            code: newPromoCode.trim().toUpperCase(),
+            discountType: 'percentage',
+            discountAmount: Number(newPromoDiscount),
+            usedCount: 0
+        };
+
+        console.log('Adding promo code:', newCode);
+
+        const updatedPromoCodes = [...(formData.promoCodes || []), newCode];
+        console.log('Updated promo codes array:', updatedPromoCodes);
+
+        setFormData({
+            ...formData,
+            promoCodes: updatedPromoCodes
+        });
+
+        setNewPromoCode("");
+        setNewPromoDiscount("");
+
+        alert.success("Code Added", `"${newCode.code}" added - click Save to persist`);
+    };
+
+    const handleRemovePromo = (index: number) => {
+        console.log('handleRemovePromo called', { index });
+
+        const updated = [...(formData.promoCodes || [])];
+        const removed = updated.splice(index, 1);
+        console.log('Removed code:', removed);
+
+        setFormData({
+            ...formData,
+            promoCodes: updated
+        });
+
+        alert.info("Code Removed", "Click Save to persist changes");
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -166,35 +231,61 @@ export default function AdminCoursesPage() {
         const action = editingCourse ? "Updating" : "Creating";
         const loadingId = alert.loading(`${action} Course`, "Please wait...");
 
+        // Build the payload explicitly
+        const payload = {
+            ...formData,
+            promoCodes: formData.promoCodes || []
+        };
+
+        console.log('=== SUBMIT DEBUG ===');
+        console.log('formData.promoCodes:', formData.promoCodes);
+        console.log('Full payload being sent:', JSON.stringify(payload, null, 2));
+
         try {
             if (editingCourse) {
                 // Update
+                const updatePayload = {
+                    id: editingCourse._id,
+                    ...payload
+                };
+                console.log('UPDATE payload:', JSON.stringify(updatePayload, null, 2));
+
                 const res = await fetch('/api/admin/courses', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: editingCourse._id, ...formData })
+                    body: JSON.stringify(updatePayload)
                 });
-                if (!res.ok) throw new Error('Failed to update');
+
+                const responseData = await res.json();
+                console.log('UPDATE response:', responseData);
+
+                if (!res.ok) throw new Error(responseData.message || 'Failed to update');
                 alert.dismissAlert(loadingId);
                 alert.success("Course Updated", `"${formData.title}" has been updated successfully`);
             } else {
                 // Create
+                console.log('CREATE payload:', JSON.stringify(payload, null, 2));
+
                 const res = await fetch('/api/admin/courses', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(payload)
                 });
-                if (!res.ok) throw new Error('Failed to create');
+
+                const responseData = await res.json();
+                console.log('CREATE response:', responseData);
+
+                if (!res.ok) throw new Error(responseData.message || 'Failed to create');
                 alert.dismissAlert(loadingId);
                 alert.success("Course Created", `"${formData.title}" has been created successfully`);
             }
 
             setIsModalOpen(false);
             fetchCourses();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Save error:', error);
             alert.dismissAlert(loadingId);
-            alert.error(`Failed to ${editingCourse ? 'update' : 'create'} course`, "Please try again");
+            alert.error(`Failed to ${editingCourse ? 'update' : 'create'} course`, error.message || "Please try again");
         } finally {
             setIsSaving(false);
         }
@@ -445,6 +536,18 @@ export default function AdminCoursesPage() {
                                 </div>
 
                                 <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Product ID (Dodo Payments)</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.productId}
+                                        onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                                        placeholder="e.g., prod_..."
+                                    />
+                                </div>
+
+                                <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Cover Image</label>
                                     <div className="flex items-start gap-4">
                                         {(formData.thumbnail || editingCourse?.thumbnail) && (
@@ -507,7 +610,6 @@ export default function AdminCoursesPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Level</label>
                                     <select
                                         value={formData.level}
                                         onChange={(e) => setFormData({ ...formData, level: e.target.value })}
@@ -517,6 +619,63 @@ export default function AdminCoursesPage() {
                                         <option>Intermediate</option>
                                         <option>Advanced</option>
                                     </select>
+                                </div>
+
+                                {/* Promo Codes Section */}
+                                <div className="border-t border-slate-100 pt-5">
+                                    <h3 className="text-sm font-bold text-slate-900 mb-3">Promo Codes</h3>
+
+                                    <div className="flex gap-2 mb-4">
+                                        <input
+                                            type="text"
+                                            placeholder="Code (e.g. SAVE20)"
+                                            value={newPromoCode}
+                                            onChange={(e) => setNewPromoCode(e.target.value)}
+                                            className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100"
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Discount %"
+                                            value={newPromoDiscount}
+                                            onChange={(e) => setNewPromoDiscount(e.target.value)}
+                                            className="w-24 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleAddPromo}
+                                            className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 transition-colors"
+                                        >
+                                            Add
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-2 mb-2">
+                                        {formData.promoCodes?.map((promo: any, idx: number) => (
+                                            <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                                                        %
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-slate-800 text-sm">{promo.code}</p>
+                                                        <p className="text-xs text-slate-500">{promo.discountAmount}% Off</p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemovePromo(idx)}
+                                                    className="text-slate-400 hover:text-red-500 p-2 transition-colors"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {(!formData.promoCodes || formData.promoCodes.length === 0) && (
+                                            <div className="text-center py-4 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                                                <p className="text-xs text-slate-400">No promo codes active</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="flex items-center gap-3">

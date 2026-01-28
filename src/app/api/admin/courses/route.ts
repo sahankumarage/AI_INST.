@@ -62,9 +62,12 @@ export async function POST(req: Request) {
             modules: courseData.modules || [],
             features: courseData.features || [],
             outcomes: courseData.outcomes || [],
+            promoCodes: courseData.promoCodes || [], // Explicitly include promoCodes
             enrolledCount: 0,
             rating: 0
         });
+
+        console.log('Creating Course with PromoCodes:', courseData.promoCodes);
 
         await newCourse.save();
 
@@ -89,6 +92,9 @@ export async function PUT(req: Request) {
 
         const { id, ...updateData } = await req.json();
 
+        console.log('Update Data received:', updateData);
+        console.log('Update PromoCodes:', updateData.promoCodes); // Debug log
+
         if (!id) {
             return NextResponse.json(
                 { message: 'Course ID is required' },
@@ -104,11 +110,24 @@ export async function PUT(req: Request) {
                 .replace(/(^-|-$)/g, '');
         }
 
+        // Use $set explicitly for promoCodes to ensure array updates work correctly
+        const updatePayload: any = {
+            ...updateData,
+            updatedAt: new Date()
+        };
+
+        // If promoCodes is in the update, ensure it's set explicitly
+        if (updateData.promoCodes !== undefined) {
+            console.log('Setting promoCodes explicitly:', updateData.promoCodes);
+        }
+
         const updatedCourse = await Course.findByIdAndUpdate(
             id,
-            { ...updateData, updatedAt: new Date() },
-            { new: true }
+            { $set: updatePayload },
+            { new: true, runValidators: false }
         );
+
+        console.log('Updated Course Result:', updatedCourse); // Debug log
 
         if (!updatedCourse) {
             return NextResponse.json(

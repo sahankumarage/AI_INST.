@@ -1,91 +1,308 @@
+/**
+ * Dodo Payment Webhook Handler
+ * Verifies payments and grants course access based on transaction metadata
+ */
+
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
+import PaymentTransaction from '@/models/PaymentTransaction';
+import Enrollment from '@/models/Enrollment';
 import User from '@/models/User';
+import { incrementPromoCodeUsage } from '@/lib/paymentUtils';
 
-const DODO_WEBHOOK_SECRET = process.env.DODO_PAYMENTS_WEBHOOK_SECRET;
+// ============================================
+// Webhook Secret Verification (Optional)
+// ============================================
+const WEBHOOK_SECRET = process.env.DODO_WEBHOOK_SECRET;
+
+function verifyWebhookSignature(
+    payload: string,
+    signature: string | null
+): boolean {
+    // If no secret configured, skip verification (not recommended for production)
+    if (!WEBHOOK_SECRET) {
+        console.warn('DODO_WEBHOOK_SECRET not configured - skipping signature verification');
+        return true;
+    }
+
+    // Dodo uses HMAC-SHA256 for webhook signatures
+    // Implement based on Dodo's documentation
+    // For now, we'll skip verification if secret is set
+    // TODO: Implement proper HMAC verification when Dodo provides documentation
+
+    return true;
+}
+
+// ============================================
+// POST: Handle Dodo Webhook
+// ============================================
 
 export async function POST(req: Request) {
+    console.log('=== DODO WEBHOOK RECEIVED ===');
+    console.log('Timestamp:', new Date().toISOString());
+
     try {
-        const body = await req.text();
+        await dbConnect();
+
+        // Get raw body for signature verification
+        const rawBody = await req.text();
         const signature = req.headers.get('x-dodo-signature');
 
-        // Verify webhook signature (implement based on Dodo's documentation)
-        // if (!verifyWebhookSignature(body, signature, DODO_WEBHOOK_SECRET)) {
-        //   return NextResponse.json({ message: 'Invalid signature' }, { status: 401 });
-        // }
-
-        const event = JSON.parse(body);
-
-        // Handle different event types
-        switch (event.type) {
-            case 'checkout.session.completed':
-                await handleSuccessfulPayment(event.data);
-                break;
-            case 'payment.failed':
-                await handleFailedPayment(event.data);
-                break;
-            default:
-                console.log(`Unhandled event type: ${event.type}`);
+        // Verify webhook signature
+        if (!verifyWebhookSignature(rawBody, signature)) {
+            console.error('Webhook signature verification failed');
+            return NextResponse.json(
+                { message: 'Invalid signature' },
+                { status: 401 }
+            );
         }
 
-        return NextResponse.json({ received: true });
+        // Parse webhook payload
+        const payload = JSON.parse(rawBody);
+        console.log('Webhook Payload:', JSON.stringify(payload, null, 2));
+
+        // Extract event type and data
+        const eventType = payload.type || payload.event;
+        const paymentData = payload.data || payload;
+
+        console.log('Event Type:', eventType);
+
+        // ----------------------------------------
+        // Handle different webhook events
+        // ----------------------------------------
+
+        switch (eventType) {
+            case 'payment.succeeded':
+            case 'payment.completed':
+            case 'payment_intent.succeeded':
+                return await handlePaymentSuccess(paymentData, payload);
+
+            case 'payment.failed':
+            case 'payment_intent.failed':
+                return await handlePaymentFailure(paymentData, payload);
+
+            case 'payment.refunded':
+                return await handlePaymentRefund(paymentData, payload);
+
+            default:
+                console.log('Unhandled webhook event type:', eventType);
+                return NextResponse.json({
+                    success: true,
+                    message: `Event ${eventType} acknowledged`
+                });
+        }
 
     } catch (error: any) {
-        console.error('Webhook error:', error);
+        console.error('=== WEBHOOK ERROR ===');
+        console.error('Error:', error);
+
         return NextResponse.json(
-            { message: error.message || 'Webhook processing failed' },
+            { message: 'Webhook processing failed', error: error.message },
             { status: 500 }
         );
     }
 }
 
-async function handleSuccessfulPayment(data: any) {
+// ============================================
+// Payment Success Handler
+// ============================================
+
+async function handlePaymentSuccess(paymentData: any, fullPayload: any) {
+    console.log('Processing successful payment...');
+
+    // Extract payment ID and metadata
+    const paymentId = paymentData.payment_id || paymentData.id;
+    const metadata = paymentData.metadata || {};
+
+    console.log('Payment ID:', paymentId);
+    console.log('Metadata:', JSON.stringify(metadata, null, 2));
+
+    // Find transaction by Dodo payment ID or transaction reference
+    let transaction = await PaymentTransaction.findOne({
+        $or: [
+            { dodoPaymentId: paymentId },
+            { transactionRef: metadata.transactionRef }
+        ]
+    });
+
+    if (!transaction) {
+        console.error('Transaction not found for payment:', paymentId);
+
+        // Create a new transaction record from webhook data
+        transaction = new PaymentTransaction({
+            transactionRef: metadata.transactionRef || `WH-${paymentId}`,
+            userId: metadata.userId || 'unknown',
+            courseSlug: metadata.courseSlug || 'unknown',
+            courseName: metadata.courseName || 'Unknown Course',
+            courseId: metadata.courseId || 'unknown',
+            originalPrice: parseFloat(metadata.originalPrice) || 0,
+            finalPrice: parseFloat(metadata.finalPrice) || 0,
+            currency: metadata.currency || 'LKR',
+            dodoPaymentId: paymentId,
+            status: 'completed',
+            webhookReceivedAt: new Date(),
+            webhookPayload: fullPayload,
+            discountCode: metadata.discountCode || undefined
+        });
+        await transaction.save();
+    }
+
+    // Update transaction status
+    transaction.status = 'completed';
+    transaction.completedAt = new Date();
+    transaction.webhookReceivedAt = new Date();
+    transaction.webhookPayload = fullPayload;
+    await transaction.save();
+
+    console.log('Transaction updated to completed:', transaction.transactionRef);
+
+    // ----------------------------------------
+    // Grant course access
+    // ----------------------------------------
+
     try {
-        await dbConnect();
+        const { userId, courseSlug, courseName, courseId } = transaction;
 
-        console.log('Processing successful payment:', JSON.stringify(data, null, 2));
-
-        const { userId, courseSlug, courseName } = data.metadata || {};
-        // Amount might be in data (e.g. data.amount, data.total_amount) or metadata if we put it there
-        // Dodo likely returns amount in the main data object
-        const amount = data.amount || data.total_amount || data.metadata?.amount || 0;
-        const paymentId = data.payment_id || data.id;
-
-        if (!userId || !courseSlug) {
-            console.error('Missing metadata in payment:', data);
-            return;
-        }
-
-        // Update user's enrolled course as paid
-        const result = await User.findByIdAndUpdate(userId, {
-            $set: {
-                'enrolledCourses.$[elem].paid': true,
-                'enrolledCourses.$[elem].paymentId': paymentId,
-                'enrolledCourses.$[elem].amount': amount,
-                'enrolledCourses.$[elem].paymentDate': new Date()
-            }
-        }, {
-            arrayFilters: [{ 'elem.courseSlug': courseSlug }],
-            new: true
+        // Check if enrollment already exists
+        const existingEnrollment = await Enrollment.findOne({
+            $or: [
+                { 'user.id': userId, courseSlug },
+                { userId, courseSlug }
+            ]
         });
 
-        if (!result) {
-            console.error(`User not found or course not found for user ${userId}, course ${courseSlug}`);
-            // Fallback: Add enrollment if it doesn't exist? 
-            // Ideally we shouldn't because enrollment happens at "pending" stage in the frontend
-            // But if they paid directly via link without enrolling first?
-            // For now assume they enrolled first.
+        if (existingEnrollment) {
+            console.log('Enrollment already exists, updating status...');
+            existingEnrollment.status = 'active';
+            existingEnrollment.paymentStatus = 'paid';
+            existingEnrollment.paidAt = new Date();
+            existingEnrollment.paymentRef = transaction.transactionRef;
+            await existingEnrollment.save();
         } else {
-            console.log(`Payment confirmed for user ${userId}, course ${courseSlug}`);
+            // Create new enrollment
+            console.log('Creating new enrollment...');
+            const enrollment = new Enrollment({
+                userId,
+                courseSlug,
+                courseName,
+                courseId,
+                status: 'active',
+                paymentStatus: 'paid',
+                paymentMethod: 'card',
+                paymentRef: transaction.transactionRef,
+                amountPaid: transaction.finalPrice,
+                enrolledAt: new Date(),
+                paidAt: new Date(),
+                progress: 0
+            });
+            await enrollment.save();
         }
 
-    } catch (error) {
-        console.error('Error processing successful payment:', error);
+        // Update user's enrolled courses
+        await User.findByIdAndUpdate(
+            userId,
+            {
+                $addToSet: {
+                    enrolledCourses: {
+                        courseSlug,
+                        courseName,
+                        enrolledAt: new Date(),
+                        progress: 0
+                    }
+                }
+            }
+        );
+
+        console.log('Course access granted for:', courseSlug);
+
+        // Increment promo code usage if applicable
+        if (transaction.discountCode) {
+            await incrementPromoCodeUsage(courseSlug, transaction.discountCode);
+            console.log('Promo code usage incremented:', transaction.discountCode);
+        }
+
+    } catch (enrollError: any) {
+        console.error('Failed to grant course access:', enrollError);
+        transaction.errorMessage = `Enrollment failed: ${enrollError.message}`;
+        await transaction.save();
     }
+
+    return NextResponse.json({
+        success: true,
+        message: 'Payment processed successfully',
+        transactionRef: transaction.transactionRef
+    });
 }
 
-async function handleFailedPayment(data: any) {
-    const { userId, courseSlug } = data.metadata || {};
-    console.log(`Payment failed for user ${userId}, course ${courseSlug}`);
-    // Could send notification email here
+// ============================================
+// Payment Failure Handler
+// ============================================
+
+async function handlePaymentFailure(paymentData: any, fullPayload: any) {
+    console.log('Processing failed payment...');
+
+    const paymentId = paymentData.payment_id || paymentData.id;
+    const metadata = paymentData.metadata || {};
+    const errorMessage = paymentData.failure_reason || paymentData.error || 'Payment failed';
+
+    // Find and update transaction
+    const transaction = await PaymentTransaction.findOne({
+        $or: [
+            { dodoPaymentId: paymentId },
+            { transactionRef: metadata.transactionRef }
+        ]
+    });
+
+    if (transaction) {
+        transaction.status = 'failed';
+        transaction.errorMessage = errorMessage;
+        transaction.webhookReceivedAt = new Date();
+        transaction.webhookPayload = fullPayload;
+        transaction.retryCount += 1;
+        await transaction.save();
+        console.log('Transaction marked as failed:', transaction.transactionRef);
+    }
+
+    return NextResponse.json({
+        success: true,
+        message: 'Payment failure recorded'
+    });
+}
+
+// ============================================
+// Payment Refund Handler
+// ============================================
+
+async function handlePaymentRefund(paymentData: any, fullPayload: any) {
+    console.log('Processing refund...');
+
+    const paymentId = paymentData.payment_id || paymentData.id;
+    const metadata = paymentData.metadata || {};
+
+    // Find and update transaction
+    const transaction = await PaymentTransaction.findOne({
+        $or: [
+            { dodoPaymentId: paymentId },
+            { transactionRef: metadata.transactionRef }
+        ]
+    });
+
+    if (transaction) {
+        transaction.status = 'refunded';
+        transaction.webhookReceivedAt = new Date();
+        transaction.webhookPayload = fullPayload;
+        await transaction.save();
+        console.log('Transaction marked as refunded:', transaction.transactionRef);
+
+        // Optionally revoke course access
+        await Enrollment.updateOne(
+            { paymentRef: transaction.transactionRef },
+            { status: 'cancelled', paymentStatus: 'refunded' }
+        );
+    }
+
+    return NextResponse.json({
+        success: true,
+        message: 'Refund processed'
+    });
 }
