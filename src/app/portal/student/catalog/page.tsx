@@ -41,7 +41,7 @@ export default function StudentCatalogPage() {
             const matchesLevel = selectedLevel === "All" || course.level === selectedLevel;
 
             return matchesSearch && matchesCategory && matchesLevel;
-        });
+        }).sort((a, b) => (b.price || 0) - (a.price || 0));
     }, [courses, searchQuery, selectedCategory, selectedLevel]);
 
     if (isLoading) {

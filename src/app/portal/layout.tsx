@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertProvider } from "@/components/ui/AlertService";
+import LMSIntroAnimation from "@/components/LMSIntroAnimation";
+import WelcomeModal from "@/components/WelcomeModal";
 
 interface User {
     id: string;
@@ -41,6 +43,8 @@ export default function PortalLayout({
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [showIntro, setShowIntro] = useState(true);
+    const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
     useEffect(() => {
         // Auth check
@@ -82,6 +86,20 @@ export default function PortalLayout({
         }
     }, [router]);
 
+    // Check if welcome modal should be shown (first-time user)
+    const handleIntroComplete = () => {
+        setShowIntro(false);
+
+        // Check if this is first time user (welcome not shown before)
+        const welcomeShown = localStorage.getItem("lms_welcome_shown");
+        if (!welcomeShown && user?.role === 'student') {
+            // Small delay for smooth transition after intro
+            setTimeout(() => {
+                setShowWelcomeModal(true);
+            }, 500);
+        }
+    };
+
     const handleLogout = () => {
         localStorage.removeItem("lms_user");
         router.push("/student-login");
@@ -119,6 +137,19 @@ export default function PortalLayout({
 
     return (
         <AlertProvider>
+            {/* Intro Animation */}
+            {showIntro && <LMSIntroAnimation onComplete={handleIntroComplete} />}
+
+            {/* Welcome Modal for First-Time Users */}
+            <AnimatePresence>
+                {showWelcomeModal && (
+                    <WelcomeModal
+                        userName={user?.name?.split(' ')[0] || 'Student'}
+                        onClose={() => setShowWelcomeModal(false)}
+                    />
+                )}
+            </AnimatePresence>
+
             <div className="min-h-screen bg-slate-50 flex">
                 {/* Sidebar Overlay for Mobile */}
                 <AnimatePresence>

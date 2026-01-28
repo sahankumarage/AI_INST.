@@ -203,7 +203,7 @@ export default function CoursesPage() {
                             <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto md:mx-0">
                                 Log in to your learning management system to track progress, access course materials, watch lessons, and manage your certificates.
                             </p>
-                            <Link href="/student-login">
+                            <a href="https://learn.aiinst.io" target="_blank" rel="noopener noreferrer">
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
@@ -211,7 +211,7 @@ export default function CoursesPage() {
                                 >
                                     Login to Academy <ArrowRight className="w-5 h-5" />
                                 </motion.button>
-                            </Link>
+                            </a>
                         </div>
 
                         {/* LMS Preview Visual */}

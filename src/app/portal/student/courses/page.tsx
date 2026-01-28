@@ -296,8 +296,8 @@ export default function StudentCoursesPage() {
                                     </p>
                                     <div className="text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 w-full max-w-[240px]">
                                         <p className="font-semibold text-slate-800 mb-1">Contact Support:</p>
-                                        <p className="select-all">support@aiinst.lk</p>
-                                        <p className="select-all font-medium">+94 77 123 4567</p>
+                                        <p className="select-all">hello@aiinst.lk</p>
+                                        <p className="select-all font-medium">+94 71 744 2222</p>
                                     </div>
                                 </div>
                             )}

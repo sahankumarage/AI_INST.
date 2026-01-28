@@ -378,7 +378,7 @@ export default function EnrollPage() {
                                         After uploading your receipt, please allow some time for verification. Your access will be activated as soon as possible.
                                     </p>
                                     <div className="text-xs text-yellow-800/80 pt-2 border-t border-yellow-200/50">
-                                        <p>Questions? Contact support@aiinst.lk or +94 77 123 4567</p>
+                                        <p>Questions? Contact hello@aiinst.lk or +94 71 744 2222</p>
                                     </div>
                                 </div>
                             </div>
@@ -514,8 +514,8 @@ export default function EnrollPage() {
                                         className="block w-full cursor-pointer"
                                     >
                                         <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${receiptFile
-                                                ? 'border-green-300 bg-green-50'
-                                                : 'border-slate-300 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50'
+                                            ? 'border-green-300 bg-green-50'
+                                            : 'border-slate-300 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50'
                                             }`}>
                                             {receiptFile ? (
                                                 // File Selected State

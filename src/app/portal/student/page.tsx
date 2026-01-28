@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Play, Clock, BookOpen, ArrowRight, Trophy, Target, Zap, Loader2 } from "lucide-react";
+import { Play, Clock, BookOpen, ArrowRight, Trophy, Target, Zap, Loader2, Sparkles, Rocket, GraduationCap, Users, Award } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAlert } from "@/components/ui/AlertService";
+import Image from "next/image";
 
 interface EnrolledCourse {
     courseSlug: string;
@@ -39,6 +40,109 @@ const getGradient = (index: number) => {
     ];
     return gradients[index % gradients.length];
 };
+
+// Welcome Dashboard for New Users - Clean Single View
+function WelcomeDashboard({ userName }: { userName: string }) {
+    return (
+        <div className="flex items-center justify-center min-h-[calc(100vh-180px)]">
+            {/* Hero Section Only */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden w-full max-w-6xl"
+            >
+                {/* Background Pattern */}
+                <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-blue-50" />
+                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-sky-100/50 to-transparent rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-blue-100/50 to-transparent rounded-full blur-2xl" />
+
+                <div className="relative p-6 md:p-10 lg:p-12">
+                    <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-10">
+                        {/* Text Content */}
+                        <div className="flex-1 text-center lg:text-left">
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-full text-sm font-semibold mb-4"
+                            >
+                                <Sparkles className="w-4 h-4" />
+                                Welcome to AI_INST. Academy
+                            </motion.div>
+
+                            <motion.h1
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-3"
+                            >
+                                Hello, {userName}! 👋
+                            </motion.h1>
+
+                            <motion.p
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                                className="text-base md:text-lg text-slate-600 mb-4 max-w-xl"
+                            >
+                                Welcome to <span className="font-semibold text-sky-600">Sri Lanka's Largest AI Education Platform</span>.
+                                Your journey to AI mastery starts here!
+                            </motion.p>
+
+                            <motion.p
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.4 }}
+                                className="text-slate-500 text-sm md:text-base mb-6"
+                            >
+                                Explore our world-class courses, learn cutting-edge AI skills, and join thousands of learners transforming their careers.
+                            </motion.p>
+
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 }}
+                                className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
+                            >
+                                <Link
+                                    href="/portal/student/catalog"
+                                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl font-bold shadow-lg shadow-sky-500/30 hover:shadow-sky-500/50 hover:scale-105 transition-all"
+                                >
+                                    <Rocket className="w-5 h-5" />
+                                    Explore Courses
+                                </Link>
+                                <Link
+                                    href="/portal/student/courses"
+                                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 rounded-xl font-bold hover:border-sky-300 hover:bg-sky-50 transition-all"
+                                >
+                                    <BookOpen className="w-5 h-5" />
+                                    My Courses
+                                </Link>
+                            </motion.div>
+                        </div>
+
+                        {/* Hero Image */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.3 }}
+                            className="flex-1 max-w-md lg:max-w-lg"
+                        >
+                            <Image
+                                src="/images/welcome-dashboard-hero.png"
+                                alt="Welcome to AI_INST. Academy"
+                                width={500}
+                                height={500}
+                                className="w-full h-auto"
+                                priority
+                            />
+                        </motion.div>
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
 
 export default function StudentDashboard() {
     const alert = useAlert();
@@ -80,6 +184,11 @@ export default function StudentDashboard() {
                 <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
             </div>
         );
+    }
+
+    // Show Welcome Dashboard for new users with no enrolled courses
+    if (enrolledCourses.length === 0) {
+        return <WelcomeDashboard userName={user?.name?.split(' ')[0] || 'Student'} />;
     }
 
     return (
@@ -228,7 +337,7 @@ export default function StudentDashboard() {
                     ))}
 
                     {/* Explore More Card */}
-                    <Link href="/portal/student/courses">
+                    <Link href="/portal/student/catalog">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}

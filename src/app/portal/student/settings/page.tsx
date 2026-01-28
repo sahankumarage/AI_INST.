@@ -244,7 +244,7 @@ export default function StudentSettingsPage() {
                             type="tel"
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            placeholder="+94 77 123 4567"
+                            placeholder="+94 71 744 2222"
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
                         />
                     </div>

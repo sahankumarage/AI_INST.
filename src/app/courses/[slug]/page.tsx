@@ -146,7 +146,7 @@ export default function CourseDetail() {
                                     </div>
                                 </div>
 
-                                <Link href={`/student-login?redirect=/portal/student/enroll/${slug}`}>
+                                <a href="https://learn.aiinst.io" target="_blank" rel="noopener noreferrer">
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
@@ -154,7 +154,7 @@ export default function CourseDetail() {
                                     >
                                         Enroll Now
                                     </motion.button>
-                                </Link>
+                                </a>
 
 
 
@@ -344,7 +344,7 @@ export default function CourseDetail() {
                             Join {course.students} students who have already transformed their careers with this course.
                         </p>
                         <div className="flex flex-wrap justify-center gap-4">
-                            <Link href={`/student-login?redirect=/portal/student/enroll/${slug}`}>
+                            <a href="https://learn.aiinst.io" target="_blank" rel="noopener noreferrer">
                                 <motion.button
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
@@ -352,7 +352,7 @@ export default function CourseDetail() {
                                 >
                                     Enroll Now <ArrowRight className="w-5 h-5" />
                                 </motion.button>
-                            </Link>
+                            </a>
                             <Link href="/contact">
                                 <motion.button
                                     whileHover={{ scale: 1.02 }}
