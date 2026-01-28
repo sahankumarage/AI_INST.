@@ -89,34 +89,71 @@ export default function StudentCoursesPage() {
     useEffect(() => {
         const verifyPayment = async () => {
             const params = new URLSearchParams(window.location.search);
-            const paymentId = params.get('payment_id') || params.get('paymentId'); // Dodo usually sends payment_id
+            const paymentId = params.get('payment_id') || params.get('paymentId');
+            const transactionRef = params.get('ref');
             const enrolledStatus = params.get('enrolled');
+            const courseSlug = params.get('slug');
 
-            if (enrolledStatus === 'success' && paymentId) {
-                const loadingId = alert.loading("Verifying Payment", "Please wait while we confirm your enrollment...");
-                try {
-                    const res = await fetch(`/api/payments/retrieve?paymentId=${paymentId}`);
-                    const data = await res.json();
+            // Only proceed if we have some indicator of a payment return
+            if (enrolledStatus !== 'success') return;
 
-                    if (data.verified || data.status === 'succeeded') {
-                        alert.success("Enrollment Confirmed", "Your payment was successful!");
-                        const userStr = localStorage.getItem("lms_user");
-                        if (userStr) {
-                            fetchEnrollments(JSON.parse(userStr).id);
-                        }
-                    } else if (data.status === 'pending' || data.status === 'processing') {
-                        alert.info("Payment Processing", "Your payment is still processing. Please check back soon.");
-                    } else {
-                        // Don't show error if it's just 'enrolled=success' without ID, but here we have ID
-                        console.warn("Payment not verified:", data.status);
-                    }
-                } catch (error) {
-                    console.error("Verification error", error);
-                } finally {
-                    alert.dismissAlert(loadingId);
-                    // Clean up URL
-                    window.history.replaceState({}, '', window.location.pathname);
+            // Get user from localStorage
+            const userStr = localStorage.getItem("lms_user");
+            if (!userStr) return;
+            const userData = JSON.parse(userStr);
+
+            const loadingId = alert.loading("Verifying Payment", "Please wait while we confirm your enrollment...");
+
+            try {
+                let verifyUrl = '/api/payments/verify?';
+
+                // Try payment_id first (Dodo sends this in return URL)
+                if (paymentId) {
+                    verifyUrl += `paymentId=${paymentId}`;
                 }
+                // Fall back to transactionRef if we have it
+                else if (transactionRef) {
+                    verifyUrl += `ref=${transactionRef}`;
+                }
+                // Include userId and courseSlug for additional context
+                if (userData.id) {
+                    verifyUrl += `&userId=${userData.id}`;
+                }
+                if (courseSlug) {
+                    verifyUrl += `&courseSlug=${courseSlug}`;
+                }
+
+                console.log('Verifying payment at:', verifyUrl);
+                const res = await fetch(verifyUrl);
+                const data = await res.json();
+
+                console.log('Verification response:', data);
+
+                if (data.success || data.verified || data.status === 'succeeded') {
+                    alert.dismissAlert(loadingId);
+                    alert.success("Enrollment Confirmed!", "You now have access to the course.");
+                    // Refresh enrollments
+                    fetchEnrollments(userData.id);
+                } else if (data.status === 'pending' || data.status === 'processing') {
+                    alert.dismissAlert(loadingId);
+                    alert.info("Payment Processing", "Your payment is still being processed. Please check back in a few minutes.");
+                } else if (data.message) {
+                    alert.dismissAlert(loadingId);
+                    alert.error("Verification Issue", data.message);
+                } else {
+                    alert.dismissAlert(loadingId);
+                    // Silently close if no explicit error
+                    console.warn("Payment verification unclear:", data);
+                    // Still refresh to check if webhook already processed it
+                    fetchEnrollments(userData.id);
+                }
+            } catch (error) {
+                console.error("Verification error:", error);
+                alert.dismissAlert(loadingId);
+                alert.error("Verification Failed", "Please contact support if you've completed payment.");
+            } finally {
+                // Clean up URL parameters
+                window.history.replaceState({}, '', window.location.pathname);
             }
         };
 

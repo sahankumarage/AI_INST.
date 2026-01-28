@@ -5,7 +5,7 @@ import User from '@/models/User';
 
 const client = new DodoPayments({
     bearerToken: process.env.DODO_PAYMENTS_API_KEY,
-    environment: 'test_mode', // Defaults to 'live_mode'
+    environment: 'live_mode',
 });
 
 export async function GET(req: Request) {
