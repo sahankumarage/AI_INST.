@@ -26,18 +26,61 @@ export async function GET(req: Request) {
             const { userId, courseSlug } = payment.metadata || {};
 
             if (userId && courseSlug) {
-                // Update user enrollment
-                await User.findByIdAndUpdate(userId, {
-                    $set: {
-                        'enrolledCourses.$[elem].paid': true,
-                        'enrolledCourses.$[elem].paymentId': paymentId,
-                        'enrolledCourses.$[elem].amount': payment.total_amount, // Adjust mapping if needed
-                        'enrolledCourses.$[elem].paymentDate': new Date()
+                // Find user first to check if already enrolled
+                const user = await User.findById(userId);
+
+                if (user) {
+                    const isEnrolled = user.enrolledCourses?.some((c: any) => c.courseSlug === courseSlug);
+
+                    if (isEnrolled) {
+                        // Update existing enrollment
+                        await User.updateOne(
+                            { _id: userId, "enrolledCourses.courseSlug": courseSlug },
+                            {
+                                $set: {
+                                    "enrolledCourses.$.paid": true,
+                                    "enrolledCourses.$.paymentId": paymentId,
+                                    "enrolledCourses.$.amount": payment.total_amount / 100,
+                                    "enrolledCourses.$.paymentDate": new Date()
+                                }
+                            }
+                        );
+                    } else {
+                        // Create new enrollment
+                        await User.findByIdAndUpdate(userId, {
+                            $push: {
+                                enrolledCourses: {
+                                    courseSlug,
+                                    courseName: payment.metadata?.courseName || courseSlug,
+                                    paid: true,
+                                    paymentId,
+                                    amount: payment.total_amount / 100,
+                                    enrolledAt: new Date(),
+                                    progress: 0,
+                                    completedLessons: []
+                                }
+                            }
+                        });
                     }
-                }, {
-                    arrayFilters: [{ 'elem.courseSlug': courseSlug }],
-                    new: true
-                });
+
+                    // Create Payment Record for Admin Dashboard
+                    try {
+                        const Payment = (await import('@/models/Payment')).default;
+                        await Payment.create({
+                            userId: userId,
+                            courseSlug: courseSlug,
+                            amount: payment.total_amount / 100,
+                            method: 'online', // Correct enum value
+                            status: 'completed',
+                            transactionId: paymentId,
+                            submittedAt: new Date(),
+                            processedAt: new Date()
+                        });
+                    } catch (paymentRecordError) {
+                        console.error("Failed to create payment record:", paymentRecordError);
+                        // Don't fail the request, just log it. The user got their course access.
+                    }
+                }
             }
 
             return NextResponse.json({

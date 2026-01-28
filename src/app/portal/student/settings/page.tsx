@@ -1,49 +1,139 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { User, Mail, Lock, Bell, Save, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { User, Mail, Lock, Bell, Save, Loader2, Camera, Upload } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useAlert } from "@/components/ui/AlertService";
 
 export default function StudentSettingsPage() {
+    const alertService = useAlert();
     const [isLoading, setIsLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [user, setUser] = useState<any>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
         email: "",
-        phone: ""
+        phone: "",
+        avatar: ""
     });
 
     useEffect(() => {
-        const userStr = localStorage.getItem("lms_user");
-        if (userStr) {
-            const userData = JSON.parse(userStr);
-            setUser(userData);
-            const [firstName, ...lastNameParts] = (userData.name || "").split(" ");
-            setFormData({
-                firstName: firstName || "",
-                lastName: lastNameParts.join(" ") || "",
-                email: userData.email || "",
-                phone: ""
-            });
-        }
+        const fetchProfile = async () => {
+            const userStr = localStorage.getItem("lms_user");
+            if (userStr) {
+                const userData = JSON.parse(userStr);
+                setUser(userData);
+
+                // Fetch latest data from API
+                try {
+                    const res = await fetch(`/api/student/profile?userId=${userData.id}`);
+                    const data = await res.json();
+                    if (res.ok && data.user) {
+                        setUser(data.user);
+                        setFormData({
+                            firstName: data.user.firstName || "",
+                            lastName: data.user.lastName || "",
+                            email: data.user.email || "",
+                            phone: data.user.phone || "",
+                            avatar: data.user.avatar || ""
+                        });
+                        // Update local storage just in case
+                        localStorage.setItem("lms_user", JSON.stringify({ ...userData, ...data.user }));
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch fresh profile", e);
+                }
+            }
+        };
+        fetchProfile();
     }, []);
 
-    const handleSave = async () => {
-        setIsLoading(true);
-        // Simulate API call
-        await new Promise(r => setTimeout(r, 1000));
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
 
-        // Update localStorage
-        const updatedUser = {
-            ...user,
-            name: `${formData.firstName} ${formData.lastName}`,
-            email: formData.email
-        };
-        localStorage.setItem("lms_user", JSON.stringify(updatedUser));
-        setUser(updatedUser);
-        setIsLoading(false);
-        alert("Settings saved successfully!");
+            // Validate file size and type if needed
+            if (file.size > 5 * 1024 * 1024) {
+                alertService.error("File Update", "Image size should be less than 5MB");
+                return;
+            }
+
+            setIsUploading(true);
+            const loadingId = alertService.loading("Uploading Avatar", "Please wait...");
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('folder', 'avatars');
+
+                const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.message || 'Upload failed');
+                }
+
+                setFormData(prev => ({ ...prev, avatar: data.url }));
+                alertService.dismissAlert(loadingId);
+                alertService.success("Upload Successful", "Profile image uploaded");
+            } catch (error: any) {
+                alertService.dismissAlert(loadingId);
+                alertService.error("Upload Failed", error.message);
+            } finally {
+                setIsUploading(false);
+            }
+        }
+    };
+
+    const handleSave = async () => {
+        const userId = user?.id || user?._id;
+        if (!userId) return;
+
+        setIsLoading(true);
+        const loadingId = alertService.loading("Saving Settings", "Updating your profile...");
+
+        try {
+            const res = await fetch('/api/student/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: userId,
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    phone: formData.phone,
+                    avatar: formData.avatar
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.message || 'Update failed');
+            }
+
+            // Update localStorage
+            const updatedUser = { ...user, ...data.user };
+            localStorage.setItem("lms_user", JSON.stringify(updatedUser));
+            setUser(updatedUser);
+
+            alertService.dismissAlert(loadingId);
+            alertService.success("Settings Saved", "Your profile has been updated successfully.");
+
+            // Trigger a page refresh to update sidebar avatar
+            window.location.reload();
+        } catch (error: any) {
+            alertService.dismissAlert(loadingId);
+            alertService.error("Save Failed", error.message);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -67,12 +157,53 @@ export default function StudentSettingsPage() {
 
                 <div className="space-y-5">
                     <div className="flex items-center gap-6 mb-6">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white text-2xl font-bold">
-                            {formData.firstName?.charAt(0) || 'U'}
+                        <div className="relative">
+                            <div className="w-24 h-24 rounded-full bg-slate-100 overflow-hidden border-4 border-white shadow-lg">
+                                {formData.avatar ? (
+                                    <img
+                                        src={formData.avatar}
+                                        alt="Profile"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white text-3xl font-bold uppercase">
+                                        {formData.firstName?.charAt(0) || 'U'}
+                                    </div>
+                                )}
+
+                                {isUploading && (
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="absolute bottom-0 right-0 p-2 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition-colors"
+                            >
+                                <Camera size={16} />
+                            </button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                accept="image/*"
+                                className="hidden"
+                            />
                         </div>
-                        <button className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                            Change Avatar
-                        </button>
+
+                        <div>
+                            <h3 className="font-bold text-slate-900 text-lg">Your Avatar</h3>
+                            <p className="text-sm text-slate-500 mb-3">Upload a picture to make your profile stand out.</p>
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+                            >
+                                <Upload size={16} />
+                                {isUploading ? 'Uploading...' : 'Upload New Image'}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -101,8 +232,9 @@ export default function StudentSettingsPage() {
                         <input
                             type="email"
                             value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                            disabled
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
+                            title="Email cannot be changed"
                         />
                     </div>
 
@@ -112,7 +244,7 @@ export default function StudentSettingsPage() {
                             type="tel"
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            placeholder="+1 (555) 000-0000"
+                            placeholder="+94 77 123 4567"
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
                         />
                     </div>

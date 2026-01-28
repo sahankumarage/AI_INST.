@@ -102,10 +102,4 @@ export async function POST(request: NextRequest) {
 }
 
 // Next.js configuration for API route
-export const config = {
-    api: {
-        bodyParser: {
-            sizeLimit: '10mb' // Match our max file size limit
-        }
-    }
-};
+

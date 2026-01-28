@@ -7,10 +7,10 @@ export async function POST(req: Request) {
     try {
         await dbConnect();
 
-        const { firstName, lastName, email, password, courseSlug, courseName } = await req.json();
+        const { firstName, lastName, email, password, mobileNumber, courseSlug, courseName } = await req.json();
 
         // Validate required fields
-        if (!firstName || !lastName || !email || !password) {
+        if (!firstName || !lastName || !email || !password || !mobileNumber) {
             return NextResponse.json(
                 { message: 'All fields are required' },
                 { status: 400 }
@@ -40,6 +40,7 @@ export async function POST(req: Request) {
             lastName,
             email: email.toLowerCase(),
             password: hashedPassword,
+            phone: mobileNumber,
             role: 'student',
             enrolledCourses
         });

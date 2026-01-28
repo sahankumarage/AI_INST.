@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { courseData } from "@/data/courses";
 import { motion } from "framer-motion";
-import { ArrowLeft, CreditCard, ShieldCheck, Check, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, CreditCard, ShieldCheck, Check, Loader2, AlertCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useAlert } from "@/components/ui/AlertService";
@@ -246,9 +246,18 @@ export default function EnrollPage() {
                         {course.level}
                     </span>
                     <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{course.title}</h1>
-                    <p className="text-slate-600 text-lg mb-8 leading-relaxed">
+                    <p className="text-slate-600 text-lg leading-relaxed mb-6">
                         {course.description}
                     </p>
+
+                    <a
+                        href={`/courses/${slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-indigo-600 font-semibold hover:text-indigo-700 hover:underline mb-8"
+                    >
+                        See Full Course Details <ArrowRight size={16} />
+                    </a>
 
                     <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm mb-8">
                         <h3 className="font-bold text-slate-900 mb-4 text-lg">What's included:</h3>

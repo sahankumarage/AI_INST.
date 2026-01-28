@@ -11,7 +11,7 @@ export const courseSeedData = [
         level: "Beginner" as const,
         duration: "8 Weeks",
         category: "Web Development",
-        thumbnail: "/courses/ai-web-dev.jpg",
+        thumbnail: "https://res.cloudinary.com/dmyfhma41/image/upload/v1769575339/ai-institute/courses/ai-driven-web-dev-cover.jpg",
         instructor: {
             name: "AI Institute Team",
             bio: "Expert instructors with years of industry experience",

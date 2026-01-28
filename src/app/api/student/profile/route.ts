@@ -57,6 +57,8 @@ export async function PUT(req: Request) {
         if (phone !== undefined) updateData.phone = phone;
         if (avatar !== undefined) updateData.avatar = avatar;
 
+        console.log('Updating profile for:', userId, 'Data:', updateData);
+
         const user = await User.findByIdAndUpdate(
             userId,
             { $set: updateData },
