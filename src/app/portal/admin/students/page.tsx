@@ -180,7 +180,7 @@ export default function AdminStudentsPage() {
                             <DollarSign size={22} />
                         </div>
                         <div>
-                            <div className="text-2xl font-bold text-slate-900">${stats.totalRevenue.toLocaleString()}</div>
+                            <div className="text-2xl font-bold text-slate-900">LKR {stats.totalRevenue.toLocaleString()}</div>
                             <div className="text-sm text-slate-500">Total Revenue</div>
                         </div>
                     </div>
@@ -296,7 +296,7 @@ export default function AdminStudentsPage() {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="py-4 px-6 font-medium text-slate-900">${totalPaid}</td>
+                                        <td className="py-4 px-6 font-medium text-slate-900">LKR {totalPaid.toLocaleString()}</td>
                                         <td className="py-4 px-6">
                                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${student.enrolledCourses.length === 0
                                                 ? 'bg-slate-100 text-slate-600'

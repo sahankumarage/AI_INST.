@@ -27,7 +27,7 @@ interface Payment {
     studentEmail: string;
     courseName: string;
     amount: number;
-    status: 'completed' | 'pending' | 'failed';
+    status: 'completed' | 'pending' | 'failed' | 'rejected';
     paymentMethod: string;
     date: string;
     transactionId: string;
@@ -37,7 +37,8 @@ interface Payment {
 const statusConfig = {
     completed: { icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-100' },
     pending: { icon: Clock, color: 'text-amber-600', bg: 'bg-amber-100' },
-    failed: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-100' }
+    failed: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-100' },
+    rejected: { icon: XCircle, color: 'text-slate-600', bg: 'bg-slate-100' }
 };
 
 export default function AdminPaymentsPage() {
@@ -45,7 +46,7 @@ export default function AdminPaymentsPage() {
     const [payments, setPayments] = useState<Payment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
-    const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending' | 'failed' | 'bank' | 'card'>('all');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending' | 'failed' | 'rejected' | 'bank' | 'card'>('all');
 
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -224,7 +225,7 @@ export default function AdminPaymentsPage() {
                         />
                     </div>
                     <div className="flex gap-2">
-                        {['all', 'completed', 'pending', 'failed', 'bank', 'card'].map((status) => (
+                        {['all', 'completed', 'pending', 'failed', 'rejected', 'bank', 'card'].map((status) => (
                             <button
                                 key={status}
                                 onClick={() => setFilterStatus(status as any)}

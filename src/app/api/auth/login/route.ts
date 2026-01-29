@@ -21,8 +21,8 @@ export async function POST(req: Request) {
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
             return NextResponse.json(
-                { message: 'Invalid email or password' },
-                { status: 400 }
+                { message: 'User does not exist. Please register first.' },
+                { status: 404 }
             );
         }
 

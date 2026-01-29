@@ -16,13 +16,15 @@ function RegisterForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
         mobileNumber: "",
         email: "",
-        password: ""
+        password: "",
+        confirmPassword: ""
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -30,12 +32,20 @@ function RegisterForm() {
         setIsLoading(true);
         setError("");
 
+        if (formData.password !== formData.confirmPassword) {
+            setError("Passwords do not match");
+            setIsLoading(false);
+            return;
+        }
+
+        const { confirmPassword, ...dataToSend } = formData;
+
         try {
             const res = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    ...formData,
+                    ...dataToSend,
                     courseSlug,
                     courseName
                 })
@@ -165,6 +175,28 @@ function RegisterForm() {
                             </button>
                         </div>
                         <p className="text-xs text-slate-400 mt-2">Must be at least 6 characters</p>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Confirm Password</label>
+                        <div className="relative">
+                            <input
+                                type={showConfirmPassword ? "text" : "password"}
+                                required
+                                minLength={6}
+                                value={formData.confirmPassword}
+                                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all pr-12"
+                                placeholder="••••••••"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                            >
+                                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
                     </div>
 
                     <button

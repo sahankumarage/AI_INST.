@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Play, Clock, BookOpen, ArrowRight, CheckCircle, Loader2, Search, Star, DollarSign } from "lucide-react";
+import { Play, Clock, BookOpen, ArrowRight, CheckCircle, Loader2, Search, Star, DollarSign, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useAlert } from "@/components/ui/AlertService";
@@ -331,11 +331,25 @@ export default function StudentCoursesPage() {
                                     <p className="text-sm text-slate-600 max-w-xs mb-3 leading-snug">
                                         Access will be granted as soon as your payment is approved.
                                     </p>
-                                    <div className="text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 w-full max-w-[240px]">
+                                    <div className="text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 w-full max-w-[240px] mb-3">
                                         <p className="font-semibold text-slate-800 mb-1">Contact Support:</p>
                                         <p className="select-all">hello@aiinst.lk</p>
                                         <p className="select-all font-medium">+94 71 744 2222</p>
                                     </div>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const userStr = localStorage.getItem("lms_user");
+                                            if (userStr) {
+                                                const userData = JSON.parse(userStr);
+                                                setIsLoading(true);
+                                                fetchEnrollments(userData.id);
+                                            }
+                                        }}
+                                        className="flex items-center justify-center gap-2 w-full max-w-[240px] px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-semibold hover:bg-indigo-100 transition-colors border border-indigo-100 shadow-sm"
+                                    >
+                                        <RefreshCw size={14} /> Check Status
+                                    </button>
                                 </div>
                             )}
                         </div>

@@ -140,7 +140,7 @@ export async function POST(req: Request) {
         // STEP 6: Convert LKR to USD for Dodo
         // ----------------------------------------
         // Dodo doesn't support LKR, so we convert to USD
-        const LKR_TO_USD_RATE = 0.0031; // 1 LKR = $0.0031 USD (approx 323 LKR = $1)
+        const LKR_TO_USD_RATE = 0.00322; // 1 LKR = $0.0031 USD (approx 323 LKR = $1)
 
         let dodoCurrency = course.currency || 'LKR';
         let dodoAmount = discountResult.finalPrice;
